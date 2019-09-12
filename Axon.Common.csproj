@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+     <!--<TargetFramework>netstandard2.0</TargetFramework>--> 
+    <TargetFrameworks>netstandard2.0;net452;net46</TargetFrameworks> 
+    <SignAssembly>true</SignAssembly> 
+    <AssemblyOriginatorKeyFile>Axon.Common.snk</AssemblyOriginatorKeyFile> 
+    <DelaySign>false</DelaySign> 
+    <Version>1.0.0-alpha.1</Version> 
+    <Description>Axon - Common Runtime</Description> 
+    <Authors>Joe Lekie</Authors> 
+    <Company>Axon</Company> 
+    <PackageTags>Axon RPC</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>
