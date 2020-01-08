@@ -6,55 +6,55 @@ namespace Axon
 {
     public interface IProtocol
     {
-        Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        Task WriteData(ITransport transport, string messageId, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
 
-        Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
-        Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
-        Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
-        Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
+        Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler);
 
-        Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, IDictionary<string, byte[]>> handler);
-        Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, IDictionary<string, byte[]>, TResult> handler);
+        Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler);
+        Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler);
 
-        Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
 
-        Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
+        Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
     }
 
     public abstract class AProtocol : IProtocol
     {
-        public abstract Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        public virtual Task WriteData(ITransport transport, string messageId, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        public virtual Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             throw new NotImplementedException();
         }
 
-        public abstract Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
-        public abstract Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
-        public virtual Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
+        public abstract Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
+        public abstract Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        public virtual Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
         {
             throw new NotImplementedException();
         }
-        public virtual Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, IDictionary<string, byte[]>> handler)
-        {
-            throw new NotImplementedException();
-        }
-        public virtual Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, IDictionary<string, byte[]>, TResult> handler)
+        public virtual Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             throw new NotImplementedException();
         }
 
-        public abstract Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        public abstract Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        public virtual Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+        public virtual Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
+        {
+            throw new NotImplementedException();
+        }
 
-        public virtual Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
+        public abstract Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        public abstract Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+
+        public virtual Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
         {
             throw new NotImplementedException();
         }

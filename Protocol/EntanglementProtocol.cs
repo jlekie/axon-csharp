@@ -13,7 +13,7 @@ namespace Axon
         {
         }
 
-        public override async Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
@@ -22,10 +22,10 @@ namespace Axon
 
                 buffer.Position = 0;
                 var data = buffer.ToArray();
-                await transport.Send(data, metadata);
+                await transport.Send(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
         }
-        public override async Task WriteData(ITransport transport, string messageId, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
@@ -34,44 +34,44 @@ namespace Axon
 
                 buffer.Position = 0;
                 var data = buffer.ToArray();
-                await transport.Send(messageId, data, metadata);
+                await transport.Send(messageId, new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
         }
 
-        public override async Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
+        public override async Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive();
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Payload);
             var reader = new EntanglementProtocolReader(transport, this, buffer);
 
             handler(reader, receivedData.Metadata);
         }
-        public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler)
+        public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive();
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Payload);
             var reader = new EntanglementProtocolReader(transport, this, buffer);
 
             var result = handler(reader, receivedData.Metadata);
 
             return result;
         }
-        public override async Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
+        public override async Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive(messageId);
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Payload);
             var reader = new EntanglementProtocolReader(transport, this, buffer);
 
             handler(reader, receivedData.Metadata);
         }
-        public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler)
+        public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive(messageId);
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Payload);
             var reader = new EntanglementProtocolReader(transport, this, buffer);
 
             var result = handler(reader, receivedData.Metadata);
@@ -79,30 +79,30 @@ namespace Axon
             return result;
         }
 
-        public override async Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, IDictionary<string, byte[]>> handler)
+        public override async Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler)
         {
             var receivedData = await transport.ReceiveTagged();
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Message.Payload);
             var reader = new EntanglementProtocolReader(transport, this, buffer);
 
-            handler(reader, receivedData.MessageId, receivedData.Metadata);
+            handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
-        public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, IDictionary<string, byte[]>, TResult> handler)
+        public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.ReceiveTagged();
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Message.Payload);
             var reader = new EntanglementProtocolReader(transport, this, buffer);
 
-            var result = handler(reader, receivedData.MessageId, receivedData.Metadata);
+            var result = handler(reader, receivedData.Id, receivedData.Message.Metadata);
 
             return result;
         }
 
-        public override async Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<ReceivedData>> receiveHandler;
+            Func<Task<ITransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
                 var writer = new EntanglementProtocolWriter(transport, this, buffer);
@@ -110,21 +110,21 @@ namespace Axon
 
                 buffer.Position = 0;
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(data, metadata);
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
-            return new Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>(async (readHandler) => {
+            return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                var buffer = new MemoryStream(receivedData.Data);
+                var buffer = new MemoryStream(receivedData.Payload);
                 var reader = new EntanglementProtocolReader(transport, this, buffer);
 
                 readHandler(reader, receivedData.Metadata);
             });
         }
-        public override async Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<ReceivedData>> receiveHandler;
+            Func<Task<ITransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
                 var writer = new EntanglementProtocolWriter(transport, this, buffer);
@@ -132,39 +132,40 @@ namespace Axon
 
                 buffer.Position = 0;
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(data, metadata);
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
-            return new Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>(async (readHandler) => {
+            return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                var buffer = new MemoryStream(receivedData.Data);
+                var buffer = new MemoryStream(receivedData.Payload);
                 var reader = new EntanglementProtocolReader(transport, this, buffer);
 
                 return readHandler(reader, receivedData.Metadata);
             });
         }
 
-        public override async Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
+        public override async Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
         {
-            var receiveResults = await transport.ReceiveAndSend();
+            throw new NotImplementedException();
+            //var receiveResults = await transport.ReceiveAndSend();
 
-            var receiveBuffer = new MemoryStream(receiveResults.ReceivedData.Data);
-            var reader = new EntanglementProtocolReader(transport, this, receiveBuffer);
-            handler(reader, receiveResults.ReceivedData.Metadata);
+            //var receiveBuffer = new MemoryStream(receiveResults.ReceivedData.Data);
+            //var reader = new EntanglementProtocolReader(transport, this, receiveBuffer);
+            //handler(reader, receiveResults.ReceivedData.Metadata);
 
-            return new Func<Action<IProtocolWriter>, Task>(async (writeHandler) =>
-            {
-                using (var buffer = new MemoryStream())
-                {
-                    var writer = new EntanglementProtocolWriter(transport, this, buffer);
-                    writeHandler(writer);
+            //return new Func<Action<IProtocolWriter>, Task>(async (writeHandler) =>
+            //{
+            //    using (var buffer = new MemoryStream())
+            //    {
+            //        var writer = new EntanglementProtocolWriter(transport, this, buffer);
+            //        writeHandler(writer);
 
-                    buffer.Position = 0;
-                    var data = buffer.ToArray();
-                    await receiveResults.SendHandler(data, receiveResults.ReceivedData.Metadata);
-                }
-            });
+            //        buffer.Position = 0;
+            //        var data = buffer.ToArray();
+            //        await receiveResults.SendHandler(data, receiveResults.ReceivedData.Metadata);
+            //    }
+            //});
         }
     }
 

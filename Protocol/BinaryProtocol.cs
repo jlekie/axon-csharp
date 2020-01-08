@@ -27,7 +27,7 @@ namespace Axon
             this.compressionEnabled = compressionEnabled;
         }
 
-        public override async Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
@@ -50,15 +50,15 @@ namespace Axon
                 }
 
                 var data = buffer.ToArray();
-                await transport.Send(data, metadata);
+                await transport.Send(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
         }
 
-        public override async Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
+        public override async Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive();
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Payload);
             BinaryProtocolReader reader;
             if (this.CompressionEnabled)
             {
@@ -72,11 +72,11 @@ namespace Axon
 
             handler(reader, receivedData.Metadata);
         }
-        public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler)
+        public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive();
 
-            var buffer = new MemoryStream(receivedData.Data);
+            var buffer = new MemoryStream(receivedData.Payload);
             BinaryProtocolReader reader;
             if (this.CompressionEnabled)
             {
@@ -93,9 +93,9 @@ namespace Axon
             return result;
         }
 
-        public override async Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<ReceivedData>> receiveHandler;
+            Func<Task<ITransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
                 if (this.CompressionEnabled)
@@ -117,13 +117,13 @@ namespace Axon
                 }
 
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(data, metadata);
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
-            return new Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>(async (readHandler) => {
+            return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                var buffer = new MemoryStream(receivedData.Data);
+                var buffer = new MemoryStream(receivedData.Payload);
                 BinaryProtocolReader reader;
                 if (this.CompressionEnabled)
                 {
@@ -138,9 +138,9 @@ namespace Axon
                 readHandler(reader, receivedData.Metadata);
             });
         }
-        public override async Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
+        public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<ReceivedData>> receiveHandler;
+            Func<Task<ITransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
                 if (this.CompressionEnabled)
@@ -162,13 +162,13 @@ namespace Axon
                 }
 
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(data, metadata);
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
-            return new Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>(async (readHandler) => {
+            return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                var buffer = new MemoryStream(receivedData.Data);
+                var buffer = new MemoryStream(receivedData.Payload);
                 BinaryProtocolReader reader;
                 if (this.CompressionEnabled)
                 {
