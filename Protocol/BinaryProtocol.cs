@@ -95,7 +95,7 @@ namespace Axon
 
         public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<ITransportMessage>> receiveHandler;
+            Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
                 if (this.CompressionEnabled)
@@ -140,7 +140,7 @@ namespace Axon
         }
         public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<ITransportMessage>> receiveHandler;
+            Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
                 if (this.CompressionEnabled)

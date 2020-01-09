@@ -13,14 +13,6 @@ namespace Axon
         byte[] Get(string id);
         bool TryGet(string id, out byte[] data);
     }
-    public interface IVolatileTransportMetadata : ITransportMetadata
-    {
-        void Add(string id, byte[] data);
-        void AddOrSet(string id, byte[] data);
-
-        byte[] Pluck(string id);
-        bool TryPluck(string id, out byte[] data);
-    }
     public interface ITransportMetadataFrame
     {
         string Id { get; }
@@ -31,17 +23,17 @@ namespace Axon
     {
         public static TransportMetadata FromMetadata(ITransportMetadata source)
         {
-            return new TransportMetadata(source.Frames.ToArray());
+            return new TransportMetadata(source.Frames.Select(f => TransportMetadataFrame.FromMetadataFrame(f)).ToArray());
         }
 
-        public readonly ITransportMetadataFrame[] Frames;
+        public readonly TransportMetadataFrame[] Frames;
         IEnumerable<ITransportMetadataFrame> ITransportMetadata.Frames => this.Frames;
 
         public TransportMetadata()
         {
-            this.Frames = new ITransportMetadataFrame[] { };
+            this.Frames = new TransportMetadataFrame[] { };
         }
-        public TransportMetadata(ITransportMetadataFrame[] frames)
+        public TransportMetadata(TransportMetadataFrame[] frames)
         {
             this.Frames = frames;
         }
@@ -68,21 +60,21 @@ namespace Axon
             return metadata != null;
         }
     }
-    public class VolatileTransportMetadata : IVolatileTransportMetadata
+    public class VolatileTransportMetadata : ITransportMetadata
     {
         public static VolatileTransportMetadata FromMetadata(ITransportMetadata source)
         {
-            return new VolatileTransportMetadata(source.Frames.ToList());
+            return new VolatileTransportMetadata(source.Frames.Select(f => VolatileTransportMetadataFrame.FromMetadataFrame(f)).ToList());
         }
 
-        public readonly List<ITransportMetadataFrame> Frames;
+        public readonly List<VolatileTransportMetadataFrame> Frames;
         IEnumerable<ITransportMetadataFrame> ITransportMetadata.Frames => this.Frames;
 
         public VolatileTransportMetadata()
         {
-            this.Frames = new List<ITransportMetadataFrame>();
+            this.Frames = new List<VolatileTransportMetadataFrame>();
         }
-        public VolatileTransportMetadata(List<ITransportMetadataFrame> frames)
+        public VolatileTransportMetadata(List<VolatileTransportMetadataFrame> frames)
         {
             this.Frames = frames;
         }
@@ -111,7 +103,7 @@ namespace Axon
 
         public void Add(string id, byte[] data)
         {
-            this.Frames.Add(new TransportMetadataFrame(id, data));
+            this.Frames.Add(new VolatileTransportMetadataFrame(id, data));
         }
         public void AddOrSet(string id, byte[] data)
         {
@@ -122,7 +114,7 @@ namespace Axon
             }
             else
             {
-                this.Frames.Add(new TransportMetadataFrame(id, data));
+                this.Frames.Add(new VolatileTransportMetadataFrame(id, data));
             }
         }
 
@@ -137,7 +129,7 @@ namespace Axon
         public bool TryPluck(string id, out byte[] data)
         {
             var metadata = this.Frames.FirstOrDefault(m => m.Id == id);
-            data = metadata.Data;
+            data = metadata?.Data;
 
             if (metadata != null)
                 this.Frames.Remove(metadata);
@@ -148,6 +140,11 @@ namespace Axon
 
     public class TransportMetadataFrame : ITransportMetadataFrame
     {
+        public static TransportMetadataFrame FromMetadataFrame(ITransportMetadataFrame source)
+        {
+            return new TransportMetadataFrame(source.Id, source.Data);
+        }
+
         public readonly string Id;
         string ITransportMetadataFrame.Id => this.Id;
 
@@ -160,25 +157,39 @@ namespace Axon
             this.Data = data;
         }
     }
-
-    public interface ITransportMessage
+    public class VolatileTransportMetadataFrame : ITransportMetadataFrame
     {
-        byte[] Payload { get; }
-        IVolatileTransportMetadata Metadata { get; }
+        public static VolatileTransportMetadataFrame FromMetadataFrame(ITransportMetadataFrame source)
+        {
+            return new VolatileTransportMetadataFrame(source.Id, source.Data);
+        }
+
+        public string Id;
+        string ITransportMetadataFrame.Id => this.Id;
+
+        public byte[] Data;
+        byte[] ITransportMetadataFrame.Data => this.Data;
+
+        public VolatileTransportMetadataFrame()
+        {
+        }
+        public VolatileTransportMetadataFrame(string id, byte[] data)
+        {
+            this.Id = id;
+            this.Data = data;
+        }
     }
 
-    public class TransportMessage : ITransportMessage
+    public class TransportMessage
     {
-        public static TransportMessage FromMessage(ITransportMessage source)
+        public static TransportMessage FromMessage(TransportMessage source)
         {
             return new TransportMessage(source.Payload, VolatileTransportMetadata.FromMetadata(source.Metadata));
         }
 
         public readonly byte[] Payload;
-        byte[] ITransportMessage.Payload => this.Payload;
 
         public readonly VolatileTransportMetadata Metadata;
-        IVolatileTransportMetadata ITransportMessage.Metadata => this.Metadata;
 
         public TransportMessage(byte[] payload)
         {
@@ -195,9 +206,9 @@ namespace Axon
     public class TaggedTransportMessage
     {
         public readonly string Id;
-        public readonly ITransportMessage Message;
+        public readonly TransportMessage Message;
 
-        public TaggedTransportMessage(string id, ITransportMessage message)
+        public TaggedTransportMessage(string id, TransportMessage message)
         {
             this.Id = id;
             this.Message = message;
@@ -319,9 +330,9 @@ namespace Axon
 
     public class MessageReceivedEventArgs : EventArgs
     {
-        public ITransportMessage Message { get; private set; }
+        public TransportMessage Message { get; private set; }
 
-        public MessageReceivedEventArgs(ITransportMessage message)
+        public MessageReceivedEventArgs(TransportMessage message)
             : base()
         {
             this.Message = message;
@@ -329,9 +340,9 @@ namespace Axon
     }
     public class MessageSentEventArgs : EventArgs
     {
-        public ITransportMessage Message { get; private set; }
+        public TransportMessage Message { get; private set; }
 
-        public MessageSentEventArgs(ITransportMessage message)
+        public MessageSentEventArgs(TransportMessage message)
             : base()
         {
             this.Message = message;
@@ -346,15 +357,15 @@ namespace Axon
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
         event EventHandler<MessageSentEventArgs> MessageSent;
 
-        Task Send(ITransportMessage message);
-        Task Send(string messageId, ITransportMessage message);
+        Task Send(TransportMessage message);
+        Task Send(string messageId, TransportMessage message);
 
-        Task<ITransportMessage> Receive();
-        Task<ITransportMessage> Receive(string messageId);
+        Task<TransportMessage> Receive();
+        Task<TransportMessage> Receive(string messageId);
 
         Task<TaggedTransportMessage> ReceiveTagged();
 
-        Task<Func<Task<ITransportMessage>>> SendAndReceive(ITransportMessage message);
+        Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message);
     }
 
     public interface IServerTransport : ITransport
@@ -383,15 +394,15 @@ namespace Axon
 
         public bool IsRunning { get; protected set; }
 
-        public abstract Task Send(ITransportMessage message);
-        public abstract Task Send(string messageId, ITransportMessage message);
+        public abstract Task Send(TransportMessage message);
+        public abstract Task Send(string messageId, TransportMessage message);
 
-        public abstract Task<ITransportMessage> Receive();
-        public abstract Task<ITransportMessage> Receive(string messageId);
+        public abstract Task<TransportMessage> Receive();
+        public abstract Task<TransportMessage> Receive(string messageId);
 
         public abstract Task<TaggedTransportMessage> ReceiveTagged();
 
-        public abstract Task<Func<Task<ITransportMessage>>> SendAndReceive(ITransportMessage message);
+        public abstract Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message);
 
         protected virtual void OnDataReceived(byte[] data, IDictionary<string, byte[]> metadata)
         {
@@ -404,11 +415,11 @@ namespace Axon
                 this.DataSent(this, new DataSentEventArgs(data, metadata));
         }
 
-        protected virtual void OnMessageReceived(ITransportMessage message)
+        protected virtual void OnMessageReceived(TransportMessage message)
         {
             this.MessageReceived?.Invoke(this, new MessageReceivedEventArgs(message));
         }
-        protected virtual void OnMessageSent(ITransportMessage message)
+        protected virtual void OnMessageSent(TransportMessage message)
         {
             this.MessageSent?.Invoke(this, new MessageSentEventArgs(message));
         }

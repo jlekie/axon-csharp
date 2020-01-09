@@ -203,41 +203,41 @@ namespace Axon
     {
         public readonly string ActionName;
         public readonly bool Success;
-        public readonly ReadOnlyDictionary<string, byte[]> Metadata;
+        public readonly ITransportMetadata Metadata;
         public readonly ReadOnlyDictionary<string, object> Arguments;
         public readonly object Result;
         public readonly Exception Exception;
-        public readonly string MessageId;
+        //public readonly string MessageId;
 
-        public HandledRequestMessage(string actionName, IDictionary<string, byte[]> metadata, IDictionary<string, object> arguments, Exception exception, string messageId = "")
+        public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments, Exception exception)
         {
             this.ActionName = actionName;
             this.Success = false;
-            this.Metadata = new ReadOnlyDictionary<string, byte[]>(metadata);
+            this.Metadata = metadata;
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = null;
             this.Exception = exception;
-            this.MessageId = messageId;
+            //this.MessageId = messageId;
         }
-        public HandledRequestMessage(string actionName, IDictionary<string, byte[]> metadata, IDictionary<string, object> arguments, object result, string messageId = "")
+        public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments, object result)
         {
             this.ActionName = actionName;
             this.Success = true;
-            this.Metadata = new ReadOnlyDictionary<string, byte[]>(metadata);
+            this.Metadata = metadata;
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = result;
             this.Exception = null;
-            this.MessageId = messageId;
+            //this.MessageId = messageId;
         }
-        public HandledRequestMessage(string actionName, IDictionary<string, byte[]> metadata, IDictionary<string, object> arguments, string messageId = "")
+        public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments)
         {
             this.ActionName = actionName;
             this.Success = true;
-            this.Metadata = new ReadOnlyDictionary<string, byte[]>(metadata);
+            this.Metadata = metadata;
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = null;
             this.Exception = null;
-            this.MessageId = messageId;
+            //this.MessageId = messageId;
         }
     }
 }
