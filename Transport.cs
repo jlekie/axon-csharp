@@ -201,6 +201,13 @@ namespace Axon
             this.Payload = payload;
             this.Metadata = metadata;
         }
+
+        public void WriteDebug()
+        {
+            foreach (var frame in this.Metadata.Frames)
+                Console.WriteLine("  " + frame.Id + " [ " + BitConverter.ToString(frame.Data).Replace("-", " ") + " ]");
+            Console.WriteLine("  Payload" + " [ " + BitConverter.ToString(this.Payload).Replace("-", " ") + " ]");
+        }
     }
 
     public class TaggedTransportMessage

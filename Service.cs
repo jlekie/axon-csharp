@@ -207,7 +207,6 @@ namespace Axon
         public readonly ReadOnlyDictionary<string, object> Arguments;
         public readonly object Result;
         public readonly Exception Exception;
-        //public readonly string MessageId;
 
         public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments, Exception exception)
         {
@@ -217,7 +216,6 @@ namespace Axon
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = null;
             this.Exception = exception;
-            //this.MessageId = messageId;
         }
         public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments, object result)
         {
@@ -227,7 +225,6 @@ namespace Axon
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = result;
             this.Exception = null;
-            //this.MessageId = messageId;
         }
         public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments)
         {
@@ -237,7 +234,6 @@ namespace Axon
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = null;
             this.Exception = null;
-            //this.MessageId = messageId;
         }
     }
 }
