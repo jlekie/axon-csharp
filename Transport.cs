@@ -9,6 +9,7 @@ namespace Axon
     {
         IEnumerable<ITransportMetadataFrame> Frames { get; }
 
+        bool Has(string id);
         byte[] Find(string id);
         byte[] Get(string id);
         bool TryGet(string id, out byte[] data);
@@ -38,6 +39,10 @@ namespace Axon
             this.Frames = frames;
         }
 
+        public bool Has(string id)
+        {
+            return this.Frames.Any(m => m.Id == id);
+        }
         public byte[] Find(string id)
         {
             this.TryGet(id, out var data);
@@ -79,6 +84,10 @@ namespace Axon
             this.Frames = frames;
         }
 
+        public bool Has(string id)
+        {
+            return this.Frames.Any(m => m.Id == id);
+        }
         public byte[] Find(string id)
         {
             this.TryGet(id, out var data);
@@ -202,11 +211,14 @@ namespace Axon
             this.Metadata = metadata;
         }
 
-        public void WriteDebug()
+        public void WriteDebug(string label = "")
         {
-            foreach (var frame in this.Metadata.Frames)
-                Console.WriteLine("  " + frame.Id + " [ " + BitConverter.ToString(frame.Data).Replace("-", " ") + " ]");
-            Console.WriteLine("  Payload" + " [ " + BitConverter.ToString(this.Payload).Replace("-", " ") + " ]");
+            Console.WriteLine(
+                $"{(string.IsNullOrEmpty(label) ? "Message" : label)}" +
+                (this.Metadata.Frames.Count > 0 ? $"\n  Metadata:" : "") +
+                (this.Metadata.Frames.Count > 0 ? $"\n{string.Join("\n", this.Metadata.Frames.Select(frame => $"    {frame.Id}: [ " + frame.Data.WriteHex(20) + " ] " + frame.Data.WriteDataSize()))}" : "") +
+                $"\n  Payload:" +
+                $"\n" + "    [ " + this.Payload.WriteHex(20) + " ] " + this.Payload.WriteDataSize());
         }
     }
 
@@ -310,46 +322,11 @@ namespace Axon
     //    }
     //}
 
-    public class DataReceivedEventArgs : EventArgs
-    {
-        public byte[] Data { get; private set; }
-        public Dictionary<string, byte[]> Metadata { get; private set; }
-
-        public DataReceivedEventArgs(byte[] data, IDictionary<string, byte[]> metadata)
-            : base()
-        {
-            this.Data = data;
-            this.Metadata = new Dictionary<string, byte[]>(metadata);
-        }
-    }
-    public class DataSentEventArgs : EventArgs
-    {
-        public byte[] Data { get; private set; }
-        public Dictionary<string, byte[]> Metadata { get; private set; }
-
-        public DataSentEventArgs(byte[] data, IDictionary<string, byte[]> metadata)
-            : base()
-        {
-            this.Data = data;
-            this.Metadata = new Dictionary<string, byte[]>(metadata);
-        }
-    }
-
-    public class MessageReceivedEventArgs : EventArgs
+    public class MessagingEventArgs : EventArgs
     {
         public TransportMessage Message { get; private set; }
 
-        public MessageReceivedEventArgs(TransportMessage message)
-            : base()
-        {
-            this.Message = message;
-        }
-    }
-    public class MessageSentEventArgs : EventArgs
-    {
-        public TransportMessage Message { get; private set; }
-
-        public MessageSentEventArgs(TransportMessage message)
+        public MessagingEventArgs(TransportMessage message)
             : base()
         {
             this.Message = message;
@@ -358,11 +335,11 @@ namespace Axon
 
     public interface ITransport
     {
-        event EventHandler<DataReceivedEventArgs> DataReceived;
-        event EventHandler<DataSentEventArgs> DataSent;
+        event EventHandler<MessagingEventArgs> MessageReceived;
+        event EventHandler<MessagingEventArgs> MessageSent;
 
-        event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        event EventHandler<MessageSentEventArgs> MessageSent;
+        event EventHandler<MessagingEventArgs> MessageReceiving;
+        event EventHandler<MessagingEventArgs> MessageSending;
 
         Task Send(TransportMessage message);
         Task Send(string messageId, TransportMessage message);
@@ -393,11 +370,11 @@ namespace Axon
 
     public abstract class ATransport : ITransport
     {
-        public event EventHandler<DataReceivedEventArgs> DataReceived;
-        public event EventHandler<DataSentEventArgs> DataSent;
+        public event EventHandler<MessagingEventArgs> MessageReceived;
+        public event EventHandler<MessagingEventArgs> MessageSent;
 
-        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        public event EventHandler<MessageSentEventArgs> MessageSent;
+        public event EventHandler<MessagingEventArgs> MessageReceiving;
+        public event EventHandler<MessagingEventArgs> MessageSending;
 
         public bool IsRunning { get; protected set; }
 
@@ -411,24 +388,22 @@ namespace Axon
 
         public abstract Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message);
 
-        protected virtual void OnDataReceived(byte[] data, IDictionary<string, byte[]> metadata)
-        {
-            if (this.DataReceived != null)
-                this.DataReceived(this, new DataReceivedEventArgs(data, metadata));
-        }
-        protected virtual void OnDataSent(byte[] data, IDictionary<string, byte[]> metadata)
-        {
-            if (this.DataSent != null)
-                this.DataSent(this, new DataSentEventArgs(data, metadata));
-        }
-
         protected virtual void OnMessageReceived(TransportMessage message)
         {
-            this.MessageReceived?.Invoke(this, new MessageReceivedEventArgs(message));
+            this.MessageReceived?.Invoke(this, new MessagingEventArgs(message));
         }
         protected virtual void OnMessageSent(TransportMessage message)
         {
-            this.MessageSent?.Invoke(this, new MessageSentEventArgs(message));
+            this.MessageSent?.Invoke(this, new MessagingEventArgs(message));
+        }
+
+        protected virtual void OnMessageReceiving(TransportMessage message)
+        {
+            this.MessageReceiving?.Invoke(this, new MessagingEventArgs(message));
+        }
+        protected virtual void OnMessageSending(TransportMessage message)
+        {
+            this.MessageSending?.Invoke(this, new MessagingEventArgs(message));
         }
     }
 
@@ -445,5 +420,37 @@ namespace Axon
    
         public abstract Task Connect(int timeout = 0);
         public abstract Task Close();
+    }
+
+    internal static class Helpers
+    {
+        public static string WriteHex(this byte[] data, int maxLength = 0)
+        {
+            string content;
+            if (maxLength > 0 && data.Length > maxLength)
+                content = BitConverter.ToString(data.Take(maxLength).ToArray()).Replace(" - ", " ") + "...";
+            else
+                content = BitConverter.ToString(data).Replace(" - ", " ");
+
+            return content;
+        }
+
+        public static string WriteDataSize(this byte[] data)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = data.Length;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+
+            // Adjust the format string to your preferences. For example "{0:0.#}{1}" would
+            // show a single decimal place, and no space.
+            string result = String.Format("{0:0.##}{1}", len, sizes[order]);
+
+            return result;
+        }
     }
 }
