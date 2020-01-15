@@ -341,6 +341,8 @@ namespace Axon
         event EventHandler<MessagingEventArgs> MessageReceiving;
         event EventHandler<MessagingEventArgs> MessageSending;
 
+        string Identity { get; }
+
         Task Send(TransportMessage message);
         Task Send(string messageId, TransportMessage message);
 
@@ -376,7 +378,17 @@ namespace Axon
         public event EventHandler<MessagingEventArgs> MessageReceiving;
         public event EventHandler<MessagingEventArgs> MessageSending;
 
+        public string Identity { get; private set; }
         public bool IsRunning { get; protected set; }
+
+        public ATransport()
+        {
+            this.Identity = Guid.NewGuid().ToString().Replace("-", "").ToLowerInvariant();
+        }
+        public ATransport(string identity)
+        {
+            this.Identity = identity;
+        }
 
         public abstract Task Send(TransportMessage message);
         public abstract Task Send(string messageId, TransportMessage message);
