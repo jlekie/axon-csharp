@@ -10,9 +10,20 @@ namespace Axon
         IEnumerable<ITransportMetadataFrame> Frames { get; }
 
         bool Has(string id);
+
         byte[] Find(string id);
         byte[] Get(string id);
         bool TryGet(string id, out byte[] data);
+
+        byte[][] GetAll(string id);
+
+        byte[] FindFirst(string id);
+        byte[] GetFirst(string id);
+        bool TryGetFirst(string id, out byte[] data);
+
+        byte[] FindLast(string id);
+        byte[] GetLast(string id);
+        bool TryGetLast(string id, out byte[] data);
     }
     public interface ITransportMetadataFrame
     {
@@ -59,7 +70,56 @@ namespace Axon
         }
         public bool TryGet(string id, out byte[] data)
         {
+            var metadata = this.Frames.SingleOrDefault(m => m.Id == id);
+            data = metadata?.Data;
+
+            return metadata != null;
+        }
+
+        public byte[][] GetAll(string id)
+        {
+            return this.Frames.Where(m => m.Id == id).Select(m => m.Data).ToArray();
+        }
+
+        public byte[] FindFirst(string id)
+        {
+            this.TryGetFirst(id, out var data);
+
+            return data;
+        }
+        public byte[] GetFirst(string id)
+        {
+            var success = this.TryGetFirst(id, out var data);
+            if (!success)
+                throw new Exception($"Metadata ${id} unavailable");
+
+            return data;
+        }
+        public bool TryGetFirst(string id, out byte[] data)
+        {
             var metadata = this.Frames.FirstOrDefault(m => m.Id == id);
+            data = metadata?.Data;
+
+            return metadata != null;
+        }
+
+        public byte[] FindLast(string id)
+        {
+            this.TryGetLast(id, out var data);
+
+            return data;
+        }
+        public byte[] GetLast(string id)
+        {
+            var success = this.TryGetLast(id, out var data);
+            if (!success)
+                throw new Exception($"Metadata ${id} unavailable");
+
+            return data;
+        }
+        public bool TryGetLast(string id, out byte[] data)
+        {
+            var metadata = this.Frames.LastOrDefault(m => m.Id == id);
             data = metadata?.Data;
 
             return metadata != null;
@@ -104,10 +164,80 @@ namespace Axon
         }
         public bool TryGet(string id, out byte[] data)
         {
+            var metadata = this.Frames.SingleOrDefault(m => m.Id == id);
+            data = metadata?.Data;
+
+            return metadata != null;
+        }
+
+        public byte[][] GetAll(string id)
+        {
+            return this.Frames.Where(m => m.Id == id).Select(m => m.Data).ToArray();
+        }
+
+        public byte[] FindFirst(string id)
+        {
+            this.TryGetFirst(id, out var data);
+
+            return data;
+        }
+        public byte[] GetFirst(string id)
+        {
+            var success = this.TryGetFirst(id, out var data);
+            if (!success)
+                throw new Exception($"Metadata ${id} unavailable");
+
+            return data;
+        }
+        public bool TryGetFirst(string id, out byte[] data)
+        {
             var metadata = this.Frames.FirstOrDefault(m => m.Id == id);
             data = metadata?.Data;
 
             return metadata != null;
+        }
+
+        public byte[] FindLast(string id)
+        {
+            this.TryGetLast(id, out var data);
+
+            return data;
+        }
+        public byte[] GetLast(string id)
+        {
+            var success = this.TryGetLast(id, out var data);
+            if (!success)
+                throw new Exception($"Metadata ${id} unavailable");
+
+            return data;
+        }
+        public bool TryGetLast(string id, out byte[] data)
+        {
+            var metadata = this.Frames.LastOrDefault(m => m.Id == id);
+            data = metadata?.Data;
+
+            return metadata != null;
+        }
+
+        public byte[] GetOrAdd(string id, byte[] data)
+        {
+            if (this.TryGet(id, out var existingData))
+                return existingData;
+
+            this.Add(id, data);
+
+            return data;
+        }
+        public byte[] GetOrAdd(string id, Func<string, byte[]> dataFactory)
+        {
+            if (this.TryGet(id, out var existingData))
+                return existingData;
+
+            var data = dataFactory(id);
+
+            this.Add(id, data);
+
+            return data;
         }
 
         public void Add(string id, byte[] data)
@@ -116,7 +246,7 @@ namespace Axon
         }
         public void AddOrSet(string id, byte[] data)
         {
-            var frame = this.Frames.FirstOrDefault(m => m.Id == id);
+            var frame = this.Frames.SingleOrDefault(m => m.Id == id);
             if (frame != null)
             {
                 frame.Data = data;
@@ -137,7 +267,45 @@ namespace Axon
         }
         public bool TryPluck(string id, out byte[] data)
         {
+            var metadata = this.Frames.SingleOrDefault(m => m.Id == id);
+            data = metadata?.Data;
+
+            if (metadata != null)
+                this.Frames.Remove(metadata);
+
+            return metadata != null;
+        }
+
+        public byte[] PluckFirst(string id)
+        {
+            var success = this.TryPluckFirst(id, out var data);
+            if (!success)
+                throw new Exception($"Metadata ${id} unavailable");
+
+            return data;
+        }
+        public bool TryPluckFirst(string id, out byte[] data)
+        {
             var metadata = this.Frames.FirstOrDefault(m => m.Id == id);
+            data = metadata?.Data;
+
+            if (metadata != null)
+                this.Frames.Remove(metadata);
+
+            return metadata != null;
+        }
+
+        public byte[] PluckLast(string id)
+        {
+            var success = this.TryPluckLast(id, out var data);
+            if (!success)
+                throw new Exception($"Metadata ${id} unavailable");
+
+            return data;
+        }
+        public bool TryPluckLast(string id, out byte[] data)
+        {
+            var metadata = this.Frames.LastOrDefault(m => m.Id == id);
             data = metadata?.Data;
 
             if (metadata != null)
