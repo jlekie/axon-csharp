@@ -62,9 +62,6 @@ namespace Axon
 
     public interface IProtocolReader
     {
-        ITransport Transport { get; }
-        IProtocol Protocol { get; }
-
         string ReadStringValue();
         bool ReadBooleanValue();
         byte ReadByteValue();
@@ -91,30 +88,6 @@ namespace Axon
 
     public abstract class AProtocolReader : IProtocolReader
     {
-        private readonly ITransport transport;
-        public ITransport Transport
-        {
-            get
-            {
-                return this.transport;
-            }
-        }
-
-        private readonly IProtocol protocol;
-        public IProtocol Protocol
-        {
-            get
-            {
-                return this.protocol;
-            }
-        }
-
-        public AProtocolReader(ITransport transport, IProtocol protocol)
-        {
-            this.transport = transport;
-            this.protocol = protocol;
-        }
-
         public abstract string ReadStringValue();
         public abstract bool ReadBooleanValue();
         public abstract byte ReadByteValue();
@@ -204,9 +177,6 @@ namespace Axon
 
     public interface IProtocolWriter
     {
-        ITransport Transport { get; }
-        IProtocol Protocol { get; }
-
         // Task WriteData(Action<IProtocolWriter> handler);
 
         void WriteStringValue(string value);
@@ -256,30 +226,6 @@ namespace Axon
 
     public abstract class AProtocolWriter : IProtocolWriter
     {
-        private readonly ITransport transport;
-        public ITransport Transport
-        {
-            get
-            {
-                return this.transport;
-            }
-        }
-
-        private readonly IProtocol protocol;
-        public IProtocol Protocol
-        {
-            get
-            {
-                return this.protocol;
-            }
-        }
-
-        public AProtocolWriter(ITransport transport, IProtocol protocol)
-        {
-            this.transport = transport;
-            this.protocol = protocol;
-        }
-
         // public abstract Task WriteData(Action<IProtocolWriter> handler);
 
         public abstract void WriteStringValue(string value);

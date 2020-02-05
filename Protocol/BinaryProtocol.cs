@@ -35,14 +35,14 @@ namespace Axon
                 {
                     using (var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
                     {
-                        var writer = new BinaryProtocolWriter(transport, this, compressionStream);
+                        var writer = new BinaryProtocolWriter(compressionStream);
 
                         handler(writer);
                     }
                 }
                 else
                 {
-                    var writer = new BinaryProtocolWriter(transport, this, buffer);
+                    var writer = new BinaryProtocolWriter(buffer);
 
                     handler(writer);
 
@@ -63,11 +63,11 @@ namespace Axon
             if (this.CompressionEnabled)
             {
                 var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                reader = new BinaryProtocolReader(transport, this, compressionStream);
+                reader = new BinaryProtocolReader(compressionStream);
             }
             else
             {
-                reader = new BinaryProtocolReader(transport, this, buffer);
+                reader = new BinaryProtocolReader(buffer);
             }
 
             handler(reader, receivedData.Metadata);
@@ -81,11 +81,11 @@ namespace Axon
             if (this.CompressionEnabled)
             {
                 var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                reader = new BinaryProtocolReader(transport, this, compressionStream);
+                reader = new BinaryProtocolReader(compressionStream);
             }
             else
             {
-                reader = new BinaryProtocolReader(transport, this, buffer);
+                reader = new BinaryProtocolReader(buffer);
             }
 
             var result = handler(reader, receivedData.Metadata);
@@ -102,14 +102,14 @@ namespace Axon
                 {
                     using (var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
                     {
-                        var writer = new BinaryProtocolWriter(transport, this, compressionStream);
+                        var writer = new BinaryProtocolWriter(compressionStream);
 
                         handler(writer);
                     }
                 }
                 else
                 {
-                    var writer = new BinaryProtocolWriter(transport, this, buffer);
+                    var writer = new BinaryProtocolWriter(buffer);
 
                     handler(writer);
 
@@ -128,11 +128,11 @@ namespace Axon
                 if (this.CompressionEnabled)
                 {
                     var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                    reader = new BinaryProtocolReader(transport, this, compressionStream);
+                    reader = new BinaryProtocolReader(compressionStream);
                 }
                 else
                 {
-                    reader = new BinaryProtocolReader(transport, this, buffer);
+                    reader = new BinaryProtocolReader(buffer);
                 }
 
                 readHandler(reader, receivedData.Metadata);
@@ -147,14 +147,14 @@ namespace Axon
                 {
                     using (var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
                     {
-                        var writer = new BinaryProtocolWriter(transport, this, compressionStream);
+                        var writer = new BinaryProtocolWriter(compressionStream);
 
                         handler(writer);
                     }
                 }
                 else
                 {
-                    var writer = new BinaryProtocolWriter(transport, this, buffer);
+                    var writer = new BinaryProtocolWriter(buffer);
 
                     handler(writer);
 
@@ -173,11 +173,11 @@ namespace Axon
                 if (this.CompressionEnabled)
                 {
                     var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                    reader = new BinaryProtocolReader(transport, this, compressionStream);
+                    reader = new BinaryProtocolReader(compressionStream);
                 }
                 else
                 {
-                    reader = new BinaryProtocolReader(transport, this, buffer);
+                    reader = new BinaryProtocolReader(buffer);
                 }
 
                 return readHandler(reader, receivedData.Metadata);
@@ -194,8 +194,7 @@ namespace Axon
     {
         public BinaryReader DecoderStream { get; private set; }
 
-        public BinaryProtocolReader(ITransport transport, IProtocol protocol, Stream buffer)
-            : base(transport, protocol)
+        public BinaryProtocolReader(Stream buffer)
         {
             this.DecoderStream = new BinaryReader(buffer);
         }
@@ -253,8 +252,7 @@ namespace Axon
     {
         public BinaryWriter EncoderStream { get; private set; }
 
-        public BinaryProtocolWriter(ITransport transport, IProtocol protocol, Stream buffer)
-            : base(transport, protocol)
+        public BinaryProtocolWriter(Stream buffer)
         {
             this.EncoderStream = new BinaryWriter(buffer);
         }

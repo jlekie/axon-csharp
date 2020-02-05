@@ -13,11 +13,34 @@ namespace Axon
         {
         }
 
+        public T Read<T>(byte[] data, Func<IProtocolReader, T> handler)
+        {
+            using (var buffer = new MemoryStream(data))
+            {
+                var reader = new EntanglementProtocolReader(buffer);
+
+                return handler(reader);
+            }
+        }
+        public byte[] Write(Action<IProtocolWriter> handler)
+        {
+            using (var buffer = new MemoryStream())
+            {
+                var writer = new EntanglementProtocolWriter(buffer);
+                handler(writer);
+
+                buffer.Position = 0;
+                var data = buffer.ToArray();
+
+                return data;
+            }
+        }
+
         public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(transport, this, buffer);
+                var writer = new EntanglementProtocolWriter(buffer);
                 handler(writer);
 
                 buffer.Position = 0;
@@ -29,7 +52,7 @@ namespace Axon
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(transport, this, buffer);
+                var writer = new EntanglementProtocolWriter(buffer);
                 handler(writer);
 
                 buffer.Position = 0;
@@ -43,7 +66,7 @@ namespace Axon
             var receivedData = await transport.Receive();
 
             var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(transport, this, buffer);
+            var reader = new EntanglementProtocolReader(buffer);
 
             handler(reader, receivedData.Metadata);
         }
@@ -52,7 +75,7 @@ namespace Axon
             var receivedData = await transport.Receive();
 
             var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(transport, this, buffer);
+            var reader = new EntanglementProtocolReader(buffer);
 
             var result = handler(reader, receivedData.Metadata);
 
@@ -63,7 +86,7 @@ namespace Axon
             var receivedData = await transport.Receive(messageId);
 
             var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(transport, this, buffer);
+            var reader = new EntanglementProtocolReader(buffer);
 
             handler(reader, receivedData.Metadata);
         }
@@ -72,7 +95,7 @@ namespace Axon
             var receivedData = await transport.Receive(messageId);
 
             var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(transport, this, buffer);
+            var reader = new EntanglementProtocolReader(buffer);
 
             var result = handler(reader, receivedData.Metadata);
 
@@ -84,7 +107,7 @@ namespace Axon
             var receivedData = await transport.ReceiveTagged();
 
             var buffer = new MemoryStream(receivedData.Message.Payload);
-            var reader = new EntanglementProtocolReader(transport, this, buffer);
+            var reader = new EntanglementProtocolReader(buffer);
 
             handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
@@ -93,7 +116,7 @@ namespace Axon
             var receivedData = await transport.ReceiveTagged();
 
             var buffer = new MemoryStream(receivedData.Message.Payload);
-            var reader = new EntanglementProtocolReader(transport, this, buffer);
+            var reader = new EntanglementProtocolReader(buffer);
 
             var result = handler(reader, receivedData.Id, receivedData.Message.Metadata);
 
@@ -105,7 +128,7 @@ namespace Axon
             Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(transport, this, buffer);
+                var writer = new EntanglementProtocolWriter(buffer);
                 handler(writer);
 
                 buffer.Position = 0;
@@ -117,7 +140,7 @@ namespace Axon
                 var receivedData = await receiveHandler();
 
                 var buffer = new MemoryStream(receivedData.Payload);
-                var reader = new EntanglementProtocolReader(transport, this, buffer);
+                var reader = new EntanglementProtocolReader(buffer);
 
                 readHandler(reader, receivedData.Metadata);
             });
@@ -127,7 +150,7 @@ namespace Axon
             Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(transport, this, buffer);
+                var writer = new EntanglementProtocolWriter(buffer);
                 handler(writer);
 
                 buffer.Position = 0;
@@ -139,7 +162,7 @@ namespace Axon
                 var receivedData = await receiveHandler();
 
                 var buffer = new MemoryStream(receivedData.Payload);
-                var reader = new EntanglementProtocolReader(transport, this, buffer);
+                var reader = new EntanglementProtocolReader(buffer);
 
                 return readHandler(reader, receivedData.Metadata);
             });
@@ -173,8 +196,7 @@ namespace Axon
     {
         public BinaryWriter EncoderStream { get; private set; }
 
-        public EntanglementProtocolWriter(ITransport transport, IProtocol protocol, Stream buffer)
-            : base(transport, protocol)
+        public EntanglementProtocolWriter(Stream buffer)
         {
             this.EncoderStream = new BinaryWriter(buffer);
         }
@@ -230,8 +252,7 @@ namespace Axon
     {
         public BinaryReader DecoderStream { get; private set; }
 
-        public EntanglementProtocolReader(ITransport transport, IProtocol protocol, Stream buffer)
-            : base(transport, protocol)
+        public EntanglementProtocolReader(Stream buffer)
         {
             this.DecoderStream = new BinaryReader(buffer);
         }
