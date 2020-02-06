@@ -544,7 +544,7 @@ namespace Axon
         public event EventHandler<MessagingEventArgs> MessageSent;
 
         public event EventHandler<MessagingEventArgs> MessageReceiving;
-        public event EventHandler<MessagingEventArgs> MessageSending;
+        public event EventHandler<MessagingEventArgs> MessageSending = delegate { };
 
         public string Identity { get; private set; }
         public bool IsRunning { get; protected set; }
@@ -583,7 +583,7 @@ namespace Axon
         }
         protected virtual void OnMessageSending(TransportMessage message)
         {
-            this.MessageSending?.Invoke(this, new MessagingEventArgs(message));
+            System.Threading.Volatile.Read(ref this.MessageSending).Invoke(this, new MessagingEventArgs(message));
         }
     }
 
