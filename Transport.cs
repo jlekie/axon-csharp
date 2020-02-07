@@ -501,6 +501,17 @@ namespace Axon
         }
     }
 
+    public class DiagnosticMessageEventArgs : EventArgs
+    {
+        public string Message { get; private set; }
+
+        public DiagnosticMessageEventArgs(string message)
+            : base()
+        {
+            this.Message = message;
+        }
+    }
+
     public interface ITransport
     {
         event EventHandler<MessagingEventArgs> MessageReceived;
@@ -544,7 +555,9 @@ namespace Axon
         public event EventHandler<MessagingEventArgs> MessageSent;
 
         public event EventHandler<MessagingEventArgs> MessageReceiving;
-        public event EventHandler<MessagingEventArgs> MessageSending = delegate { };
+        public event EventHandler<MessagingEventArgs> MessageSending;
+
+        public event EventHandler<DiagnosticMessageEventArgs> DiagnosticMessage;
 
         public string Identity { get; private set; }
         public bool IsRunning { get; protected set; }
@@ -583,7 +596,29 @@ namespace Axon
         }
         protected virtual void OnMessageSending(TransportMessage message)
         {
-            System.Threading.Volatile.Read(ref this.MessageSending).Invoke(this, new MessagingEventArgs(message));
+            this.OnDiagnosticMessage("OnMessageSending - Before " + (this.MessageSending != null ? this.MessageSending.GetInvocationList().Length.ToString() : ""));
+            if (this.MessageSending != null)
+            {
+                foreach (var del in this.MessageSending?.GetInvocationList())
+                {
+                    this.OnDiagnosticMessage("OnMessageSending Delegate - Before");
+                    try
+                    {
+                        del.DynamicInvoke(this, new MessagingEventArgs(message));
+                    }
+                    catch
+                    {
+                        this.OnDiagnosticMessage("ERROR WILL ROBINSON");
+                    }
+                }
+            }
+            //this.MessageSending?.Invoke(this, new MessagingEventArgs(message));
+            this.OnDiagnosticMessage("OnMessageSending - After");
+        }
+
+        protected virtual void OnDiagnosticMessage(string message)
+        {
+            this.DiagnosticMessage?.Invoke(this, new DiagnosticMessageEventArgs(message));
         }
     }
 
