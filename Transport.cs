@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Axon
@@ -545,7 +546,9 @@ namespace Axon
     {
         bool IsConnected { get; }
 
-        Task Connect(int timeout = 0);
+        Task Connect();
+        Task Connect(CancellationToken cancellationToken);
+
         Task Close();
     }
 
@@ -633,7 +636,9 @@ namespace Axon
     {
         public bool IsConnected { get; protected set; }
    
-        public abstract Task Connect(int timeout = 0);
+        public abstract Task Connect();
+        public abstract Task Connect(CancellationToken cancellationToken);
+
         public abstract Task Close();
     }
 

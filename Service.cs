@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
@@ -15,7 +16,9 @@ namespace Axon
 
         bool IsConnected { get; }
 
-        Task Connect(int timeout = 0);
+        Task Connect();
+        Task Connect(CancellationToken cancellationToken);
+
         Task Close();
     }
     [ComVisible(false)]
@@ -53,10 +56,15 @@ namespace Axon
             this.protocol = protocol;
         }
 
-        public async Task Connect(int timeout = 0)
+        public async Task Connect()
         {
-            await this.Transport.Connect(timeout);
+            await this.Transport.Connect();
         }
+        public async Task Connect(CancellationToken cancellationToken)
+        {
+            await this.Transport.Connect(cancellationToken);
+        }
+   
         public async Task Close()
         {
             await this.Transport.Close();
