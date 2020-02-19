@@ -9,27 +9,58 @@ namespace Axon
 {
     public class EntanglementProtocol : AProtocol
     {
+        public readonly bool Compress;
+
         public EntanglementProtocol() : base()
         {
+            this.Compress = false;
+        }
+        public EntanglementProtocol(bool compress) : base()
+        {
+            this.Compress = compress;
         }
 
         public T Read<T>(byte[] data, Func<IProtocolReader, T> handler)
         {
             using (var buffer = new MemoryStream(data))
             {
-                var reader = new EntanglementProtocolReader(buffer);
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-                return handler(reader);
+                        return handler(reader);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
+
+                    return handler(reader);
+                }
             }
         }
         public byte[] Write(Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(buffer);
-                handler(writer);
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+                    {
+                        var writer = new EntanglementProtocolWriter(gzip);
+                        handler(writer);
+                    }
+                }
+                else
+                {
+                    var writer = new EntanglementProtocolWriter(buffer);
+                    handler(writer);
 
-                buffer.Position = 0;
+                    buffer.Position = 0;
+                }
+
                 var data = buffer.ToArray();
 
                 return data;
@@ -40,10 +71,22 @@ namespace Axon
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(buffer);
-                handler(writer);
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+                    {
+                        var writer = new EntanglementProtocolWriter(gzip);
+                        handler(writer);
+                    }
+                }
+                else
+                {
+                    var writer = new EntanglementProtocolWriter(buffer);
+                    handler(writer);
 
-                buffer.Position = 0;
+                    buffer.Position = 0;
+                }
+
                 var data = buffer.ToArray();
                 await transport.Send(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
@@ -52,10 +95,22 @@ namespace Axon
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(buffer);
-                handler(writer);
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+                    {
+                        var writer = new EntanglementProtocolWriter(gzip);
+                        handler(writer);
+                    }
+                }
+                else
+                {
+                    var writer = new EntanglementProtocolWriter(buffer);
+                    handler(writer);
 
-                buffer.Position = 0;
+                    buffer.Position = 0;
+                }
+
                 var data = buffer.ToArray();
                 await transport.Send(messageId, new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
@@ -65,62 +120,140 @@ namespace Axon
         {
             var receivedData = await transport.Receive();
 
-            var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(buffer);
+            using (var buffer = new MemoryStream(receivedData.Payload))
+            {
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-            handler(reader, receivedData.Metadata);
+                        handler(reader, receivedData.Metadata);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
+
+                    handler(reader, receivedData.Metadata);
+                }
+            }
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive();
 
-            var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(buffer);
+            using (var buffer = new MemoryStream(receivedData.Payload))
+            {
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-            var result = handler(reader, receivedData.Metadata);
+                        return handler(reader, receivedData.Metadata);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
 
-            return result;
+                    return handler(reader, receivedData.Metadata);
+                }
+            }
         }
         public override async Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive(messageId);
 
-            var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(buffer);
+            using (var buffer = new MemoryStream(receivedData.Payload))
+            {
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-            handler(reader, receivedData.Metadata);
+                        handler(reader, receivedData.Metadata);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
+
+                    handler(reader, receivedData.Metadata);
+                }
+            }
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive(messageId);
 
-            var buffer = new MemoryStream(receivedData.Payload);
-            var reader = new EntanglementProtocolReader(buffer);
+            using (var buffer = new MemoryStream(receivedData.Payload))
+            {
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-            var result = handler(reader, receivedData.Metadata);
+                        return handler(reader, receivedData.Metadata);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
 
-            return result;
+                    return handler(reader, receivedData.Metadata);
+                }
+            }
         }
 
         public override async Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler)
         {
             var receivedData = await transport.ReceiveTagged();
 
-            var buffer = new MemoryStream(receivedData.Message.Payload);
-            var reader = new EntanglementProtocolReader(buffer);
+            using (var buffer = new MemoryStream(receivedData.Message.Payload))
+            {
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-            handler(reader, receivedData.Id, receivedData.Message.Metadata);
+                        handler(reader, receivedData.Id, receivedData.Message.Metadata);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
+
+                    handler(reader, receivedData.Id, receivedData.Message.Metadata);
+                }
+            }
         }
         public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.ReceiveTagged();
 
-            var buffer = new MemoryStream(receivedData.Message.Payload);
-            var reader = new EntanglementProtocolReader(buffer);
+            using (var buffer = new MemoryStream(receivedData.Message.Payload))
+            {
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                    {
+                        var reader = new EntanglementProtocolReader(gzip);
 
-            var result = handler(reader, receivedData.Id, receivedData.Message.Metadata);
+                        return handler(reader, receivedData.Id, receivedData.Message.Metadata);
+                    }
+                }
+                else
+                {
+                    var reader = new EntanglementProtocolReader(buffer);
 
-            return result;
+                    return handler(reader, receivedData.Id, receivedData.Message.Metadata);
+                }
+            }
         }
 
         public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
@@ -128,10 +261,22 @@ namespace Axon
             Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(buffer);
-                handler(writer);
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+                    {
+                        var writer = new EntanglementProtocolWriter(gzip);
+                        handler(writer);
+                    }
+                }
+                else
+                {
+                    var writer = new EntanglementProtocolWriter(buffer);
+                    handler(writer);
 
-                buffer.Position = 0;
+                    buffer.Position = 0;
+                }
+
                 var data = buffer.ToArray();
                 receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
@@ -139,10 +284,24 @@ namespace Axon
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                var buffer = new MemoryStream(receivedData.Payload);
-                var reader = new EntanglementProtocolReader(buffer);
+                using (var buffer = new MemoryStream(receivedData.Payload))
+                {
+                    if (this.Compress)
+                    {
+                        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                        {
+                            var reader = new EntanglementProtocolReader(gzip);
 
-                readHandler(reader, receivedData.Metadata);
+                            readHandler(reader, receivedData.Metadata);
+                        }
+                    }
+                    else
+                    {
+                        var reader = new EntanglementProtocolReader(buffer);
+
+                        readHandler(reader, receivedData.Metadata);
+                    }
+                }
             });
         }
         public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
@@ -150,10 +309,22 @@ namespace Axon
             Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
-                var writer = new EntanglementProtocolWriter(buffer);
-                handler(writer);
+                if (this.Compress)
+                {
+                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+                    {
+                        var writer = new EntanglementProtocolWriter(gzip);
+                        handler(writer);
+                    }
+                }
+                else
+                {
+                    var writer = new EntanglementProtocolWriter(buffer);
+                    handler(writer);
 
-                buffer.Position = 0;
+                    buffer.Position = 0;
+                }
+
                 var data = buffer.ToArray();
                 receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
             }
@@ -161,10 +332,24 @@ namespace Axon
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                var buffer = new MemoryStream(receivedData.Payload);
-                var reader = new EntanglementProtocolReader(buffer);
+                using (var buffer = new MemoryStream(receivedData.Payload))
+                {
+                    if (this.Compress)
+                    {
+                        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+                        {
+                            var reader = new EntanglementProtocolReader(gzip);
 
-                return readHandler(reader, receivedData.Metadata);
+                            return readHandler(reader, receivedData.Metadata);
+                        }
+                    }
+                    else
+                    {
+                        var reader = new EntanglementProtocolReader(buffer);
+
+                        return readHandler(reader, receivedData.Metadata);
+                    }
+                }
             });
         }
 
