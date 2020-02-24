@@ -12,6 +12,7 @@
     <PackageTags>Axon RPC</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <Folder Include="alchemy\" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
