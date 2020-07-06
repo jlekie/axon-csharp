@@ -84,10 +84,12 @@ namespace Axon
         {
             for (var a = 0; a < modelHeader.PropertyCount; a++)
             {
-                var propertyHeader = protocol.ReadModelPropertyHeader();
+                var propertyHeader = protocol.ReadModelPropertyStart();
 
                 if (!this.ReadProperty(protocol, propertyHeader))
                     throw new Exception("Property " + propertyHeader.PropertyName + " not recognized");
+
+                protocol.ReadModelPropertyEnd();
             }
         }
 
