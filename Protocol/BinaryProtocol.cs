@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
+using System.Threading;
 
 namespace Axon
 {
@@ -182,6 +183,91 @@ namespace Axon
 
                 return readHandler(reader, receivedData.Metadata);
             });
+        }
+
+        public override Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task ReadData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<TResult> ReadData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task ReadData(ITransport transport, string messageId, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<TResult> ReadData<TResult>(ITransport transport, string messageId, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task ReadTaggedData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, string, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<TResult> ReadTaggedData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
+        {
+            throw new NotImplementedException();
         }
     }
 

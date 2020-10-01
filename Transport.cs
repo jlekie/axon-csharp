@@ -524,14 +524,20 @@ namespace Axon
         string Identity { get; }
 
         Task Send(TransportMessage message);
+        Task Send(TransportMessage message, CancellationToken cancellationToken);
         Task Send(string messageId, TransportMessage message);
+        Task Send(string messageId, TransportMessage message, CancellationToken cancellationToken);
 
         Task<TransportMessage> Receive();
+        Task<TransportMessage> Receive(CancellationToken cancellationToken);
         Task<TransportMessage> Receive(string messageId);
+        Task<TransportMessage> Receive(string messageId, CancellationToken cancellationToken);
 
         Task<TaggedTransportMessage> ReceiveTagged();
+        Task<TaggedTransportMessage> ReceiveTagged(CancellationToken cancellationToken);
 
         Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message);
+        Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message, CancellationToken cancellationToken);
     }
 
     public interface IServerTransport : ITransport
@@ -539,7 +545,9 @@ namespace Axon
         //bool IsListening { get; }
 
         Task Listen();
+
         Task Close();
+        Task Close(CancellationToken cancellationToken);
     }
 
     public interface IClientTransport : ITransport
@@ -550,6 +558,7 @@ namespace Axon
         Task Connect(CancellationToken cancellationToken);
 
         Task Close();
+        Task Close(CancellationToken cancellationToken);
     }
 
     public abstract class ATransport : ITransport
@@ -575,14 +584,20 @@ namespace Axon
         }
 
         public abstract Task Send(TransportMessage message);
+        public abstract Task Send(TransportMessage message, CancellationToken cancellationToken);
         public abstract Task Send(string messageId, TransportMessage message);
+        public abstract Task Send(string messageId, TransportMessage message, CancellationToken cancellationToken);
 
         public abstract Task<TransportMessage> Receive();
+        public abstract Task<TransportMessage> Receive(CancellationToken cancellationToken);
         public abstract Task<TransportMessage> Receive(string messageId);
+        public abstract Task<TransportMessage> Receive(string messageId, CancellationToken cancellationToken);
 
         public abstract Task<TaggedTransportMessage> ReceiveTagged();
+        public abstract Task<TaggedTransportMessage> ReceiveTagged(CancellationToken cancellationToken);
 
         public abstract Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message);
+        public abstract Task<Func<Task<TransportMessage>>> SendAndReceive(TransportMessage message, CancellationToken cancellationToken);
 
         protected virtual void OnMessageReceived(TransportMessage message)
         {
@@ -630,7 +645,9 @@ namespace Axon
         public bool IsListening { get; protected set; }
 
         public abstract Task Listen();
+
         public abstract Task Close();
+        public abstract Task Close(CancellationToken cancellationToken);
     }
     public abstract class AClientTransport : ATransport, IClientTransport
     {
@@ -640,6 +657,7 @@ namespace Axon
         public abstract Task Connect(CancellationToken cancellationToken);
 
         public abstract Task Close();
+        public abstract Task Close(CancellationToken cancellationToken);
     }
 
     internal static class Helpers
