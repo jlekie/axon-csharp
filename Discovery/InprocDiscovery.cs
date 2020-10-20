@@ -71,7 +71,7 @@ namespace Axon
         public override Task<TEndpoint[]> DiscoverAll(int timeout = 0)
         {
             if (!InprocData.Endpoints.TryGetValue(this.Identifier, out var endpoints))
-                throw new Exception();
+                return Task.FromResult(new TEndpoint[] { });
 
             return Task.FromResult(endpoints.Select(encodedEndpoint => this.EndpointDecoder.Decode(encodedEndpoint)).ToArray());
         }
