@@ -9,7 +9,32 @@ namespace Axon
 {
     internal static class InprocData
     {
-        public static ConcurrentDictionary<string, BlockingCollection<byte[]>> Endpoints = new ConcurrentDictionary<string, BlockingCollection<byte[]>>();
+        public static ConcurrentDictionary<string, byte[][]> Endpoints = new ConcurrentDictionary<string, byte[][]>();
+
+        public static void AddEndpoint(string identifier, byte[] endpoint)
+        {
+            Endpoints.AddOrUpdate(identifier, new byte[][] { endpoint }, (_, existingEndpoints) => existingEndpoints.Concat(new byte[][] { endpoint }).ToArray());
+        }
+        public static byte[] GetEndpoint(string identifier)
+        {
+            var endpoints = Endpoints.GetOrAdd(identifier, new byte[][] { });
+            var queue = new Queue<byte[]>(endpoints);
+
+            var endpoint = queue.Dequeue();
+            queue.Enqueue(endpoint);
+
+            Endpoints.AddOrUpdate(identifier, queue.ToArray(), (i, e) => queue.ToArray());
+
+            return endpoint;
+        }
+        public static void RemoveEndpoint(string identifier, byte[] endpoint)
+        {
+            var endpoints = Endpoints.GetOrAdd(identifier, new byte[][] { });
+
+            var filteredEndpoints = endpoints.Where(e => !e.SequenceEqual(endpoint));
+
+            Endpoints.AddOrUpdate(identifier, filteredEndpoints.ToArray(), (i, e) => filteredEndpoints.ToArray());
+        }
     }
 
     public class InprocAnnouncer : AAnnouncer
@@ -21,11 +46,12 @@ namespace Axon
 
         public override async Task Register(IEncodableEndpoint endpoint)
         {
-            InprocData.Endpoints.AddOrUpdate(this.Identifier, (identifier) => new BlockingCollection<byte[]>() { endpoint.Encode() }, (identifier, endpoints) =>
-            {
-                endpoints.Add(endpoint.Encode());
-                return endpoints;
-            });
+            InprocData.AddEndpoint(this.Identifier, endpoint.Encode());
+        }
+
+        public void Deregister(IEncodableEndpoint endpoint)
+        {
+            InprocData.RemoveEndpoint(this.Identifier, endpoint.Encode());
         }
     }
 
@@ -38,11 +64,7 @@ namespace Axon
 
         public override Task<TEndpoint> Discover(int timeout = 0)
         {
-            if (!InprocData.Endpoints.TryGetValue(this.Identifier, out var endpoints))
-                throw new Exception();
-
-            var encodedEndpoint = endpoints.Take();
-            endpoints.Add(encodedEndpoint);
+            var encodedEndpoint = InprocData.GetEndpoint(this.Identifier);
 
             return Task.FromResult(this.EndpointDecoder.Decode(encodedEndpoint));
         }
