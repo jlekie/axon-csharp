@@ -493,12 +493,19 @@ namespace Axon
 
     public class MessagingEventArgs : EventArgs
     {
-        public TransportMessage Message { get; private set; }
+        public TransportMessage Message { get; }
+        public string Tag { get; }
 
         public MessagingEventArgs(TransportMessage message)
             : base()
         {
             this.Message = message;
+        }
+        public MessagingEventArgs(TransportMessage message, string tag)
+            : base()
+        {
+            this.Message = message;
+            this.Tag = tag;
         }
     }
 
@@ -603,35 +610,55 @@ namespace Axon
         {
             this.MessageReceived?.Invoke(this, new MessagingEventArgs(message));
         }
+        protected virtual void OnMessageReceived(TransportMessage message, string tag)
+        {
+            this.MessageReceived?.Invoke(this, new MessagingEventArgs(message, tag));
+        }
+
         protected virtual void OnMessageSent(TransportMessage message)
         {
             this.MessageSent?.Invoke(this, new MessagingEventArgs(message));
+        }
+        protected virtual void OnMessageSent(TransportMessage message, string tag)
+        {
+            this.MessageSent?.Invoke(this, new MessagingEventArgs(message, tag));
         }
 
         protected virtual void OnMessageReceiving(TransportMessage message)
         {
             this.MessageReceiving?.Invoke(this, new MessagingEventArgs(message));
         }
+        protected virtual void OnMessageReceiving(TransportMessage message, string tag)
+        {
+            this.MessageReceiving?.Invoke(this, new MessagingEventArgs(message, tag));
+        }
+
         protected virtual void OnMessageSending(TransportMessage message)
         {
-            this.OnDiagnosticMessage("OnMessageSending - Before " + (this.MessageSending != null ? this.MessageSending.GetInvocationList().Length.ToString() : ""));
-            if (this.MessageSending != null)
-            {
-                foreach (var del in this.MessageSending?.GetInvocationList())
-                {
-                    this.OnDiagnosticMessage("OnMessageSending Delegate - Before");
-                    try
-                    {
-                        del.DynamicInvoke(this, new MessagingEventArgs(message));
-                    }
-                    catch
-                    {
-                        this.OnDiagnosticMessage("ERROR WILL ROBINSON");
-                    }
-                }
-            }
-            //this.MessageSending?.Invoke(this, new MessagingEventArgs(message));
-            this.OnDiagnosticMessage("OnMessageSending - After");
+            this.MessageSending?.Invoke(this, new MessagingEventArgs(message));
+
+            //this.OnDiagnosticMessage("OnMessageSending - Before " + (this.MessageSending != null ? this.MessageSending.GetInvocationList().Length.ToString() : ""));
+            //if (this.MessageSending != null)
+            //{
+            //    foreach (var del in this.MessageSending?.GetInvocationList())
+            //    {
+            //        this.OnDiagnosticMessage("OnMessageSending Delegate - Before");
+            //        try
+            //        {
+            //            del.DynamicInvoke(this, new MessagingEventArgs(message));
+            //        }
+            //        catch
+            //        {
+            //            this.OnDiagnosticMessage("ERROR WILL ROBINSON");
+            //        }
+            //    }
+            //}
+            ////this.MessageSending?.Invoke(this, new MessagingEventArgs(message));
+            //this.OnDiagnosticMessage("OnMessageSending - After");
+        }
+        protected virtual void OnMessageSending(TransportMessage message, string tag)
+        {
+            this.MessageSending?.Invoke(this, new MessagingEventArgs(message, tag));
         }
 
         protected virtual void OnDiagnosticMessage(string message)
