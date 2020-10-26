@@ -280,6 +280,12 @@ namespace Axon
         public event EventHandler Listening;
         public event EventHandler Closed;
 
+        private bool isListening = false;
+        public override bool IsListening
+        {
+            get => this.isListening;
+        } 
+
         public MessageStream ReceiveStream { get; } = new MessageStream();
         private TransportMessageBuffer MessageBuffer { get; } = new TransportMessageBuffer();
 
@@ -295,18 +301,18 @@ namespace Axon
 
         public override async Task Listen()
         {
-            this.IsListening = true;
+            this.isListening = true;
             this.OnListening();
         }
 
         public override async Task Close()
         {
-            this.IsListening = false;
+            this.isListening = false;
             this.OnClosed();
         }
         public override async Task Close(CancellationToken cancellationToken)
         {
-            this.IsListening = false;
+            this.isListening = false;
             this.OnClosed();
         }
 
@@ -466,6 +472,11 @@ namespace Axon
 
     public class InprocClientTransport : AClientTransport
     {
+        public override bool IsConnected
+        {
+            get => this.ServerTransport.IsListening;
+        }
+
         public InprocServerTransport ServerTransport { get; }
 
         public MessageStream ReceiveStream { get; } = new MessageStream();
@@ -476,8 +487,6 @@ namespace Axon
             : base()
         {
             this.ServerTransport = serverTransport;
-
-            this.IsConnected = true;
 
             this.ReceiveStream.MessageEnqueued += this.ReceiveBufferMessageEnqueued;
             //this.TaggedReceiveBuffer.MessageEnqueued += this.TaggedReceiveBufferMessageEnqueued;
@@ -490,20 +499,16 @@ namespace Axon
 
         public override async Task Connect()
         {
-            this.IsConnected = true;
         }
         public override async Task Connect(CancellationToken cancellationToken)
         {
-            this.IsConnected = true;
         }
 
         public override async Task Close()
         {
-            this.IsConnected = false;
         }
         public override async Task Close(CancellationToken cancellationToken)
         {
-            this.IsConnected = false;
         }
 
         public override async Task Send(TransportMessage message)

@@ -669,7 +669,7 @@ namespace Axon
 
     public abstract class AServerTransport : ATransport, IServerTransport
     {
-        public bool IsListening { get; protected set; }
+        public abstract bool IsListening { get; }
 
         public abstract Task Listen();
 
@@ -678,8 +678,8 @@ namespace Axon
     }
     public abstract class AClientTransport : ATransport, IClientTransport
     {
-        public bool IsConnected { get; protected set; }
-   
+        public abstract bool IsConnected { get; }
+
         public abstract Task Connect();
         public abstract Task Connect(CancellationToken cancellationToken);
 
