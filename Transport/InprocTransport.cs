@@ -614,7 +614,7 @@ namespace Axon
             this.OnMessageReceiving(e.Message);
 
             var forwardedMessage = TransportMessage.FromMessage(e.Message);
-            if (forwardedMessage.Metadata.TryPluck($"mid[{this.Identity}]", out var encodedMessageId))
+            if (forwardedMessage.Metadata.TryPluckLast($"mid[{this.Identity}]", out var encodedMessageId))
             {
                 var messageId = Encoding.UTF8.GetString(encodedMessageId);
                 this.TaggedMessageBuffer.QueueMessage(messageId, forwardedMessage);
