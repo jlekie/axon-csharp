@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
@@ -15,7 +16,9 @@ namespace Axon
 
         bool IsConnected { get; }
 
-        Task Connect(int timeout = 0);
+        Task Connect();
+        Task Connect(CancellationToken cancellationToken);
+
         Task Close();
     }
     [ComVisible(false)]
@@ -53,10 +56,15 @@ namespace Axon
             this.protocol = protocol;
         }
 
-        public async Task Connect(int timeout = 0)
+        public async Task Connect()
         {
-            await this.Transport.Connect(timeout);
+            await this.Transport.Connect();
         }
+        public async Task Connect(CancellationToken cancellationToken)
+        {
+            await this.Transport.Connect(cancellationToken);
+        }
+   
         public async Task Close()
         {
             await this.Transport.Close();
@@ -203,41 +211,37 @@ namespace Axon
     {
         public readonly string ActionName;
         public readonly bool Success;
-        public readonly ReadOnlyDictionary<string, byte[]> Metadata;
+        public readonly ITransportMetadata Metadata;
         public readonly ReadOnlyDictionary<string, object> Arguments;
         public readonly object Result;
         public readonly Exception Exception;
-        public readonly string MessageId;
 
-        public HandledRequestMessage(string actionName, IDictionary<string, byte[]> metadata, IDictionary<string, object> arguments, Exception exception, string messageId = "")
+        public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments, Exception exception)
         {
             this.ActionName = actionName;
             this.Success = false;
-            this.Metadata = new ReadOnlyDictionary<string, byte[]>(metadata);
+            this.Metadata = metadata;
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = null;
             this.Exception = exception;
-            this.MessageId = messageId;
         }
-        public HandledRequestMessage(string actionName, IDictionary<string, byte[]> metadata, IDictionary<string, object> arguments, object result, string messageId = "")
+        public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments, object result)
         {
             this.ActionName = actionName;
             this.Success = true;
-            this.Metadata = new ReadOnlyDictionary<string, byte[]>(metadata);
+            this.Metadata = metadata;
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = result;
             this.Exception = null;
-            this.MessageId = messageId;
         }
-        public HandledRequestMessage(string actionName, IDictionary<string, byte[]> metadata, IDictionary<string, object> arguments, string messageId = "")
+        public HandledRequestMessage(string actionName, ITransportMetadata metadata, IDictionary<string, object> arguments)
         {
             this.ActionName = actionName;
             this.Success = true;
-            this.Metadata = new ReadOnlyDictionary<string, byte[]>(metadata);
+            this.Metadata = metadata;
             this.Arguments = new ReadOnlyDictionary<string, object>(arguments);
             this.Result = null;
             this.Exception = null;
-            this.MessageId = messageId;
         }
     }
 }

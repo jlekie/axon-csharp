@@ -37,14 +37,15 @@ namespace Axon
 
         public void Write(Axon.IProtocolWriter protocol)
         {
-            protocol.WriteModelPropertyHeader(new Axon.ModelPropertyHeader("message", "string"));
+            protocol.WriteModelPropertyStart(new Axon.ModelPropertyHeader("message", "string"));
             protocol.WriteStringValue(this.Message);
+            protocol.WriteModelPropertyEnd();
         }
         public void Read(Axon.IProtocolReader protocol, Axon.ModelHeader modelHeader)
         {
             for (var a = 0; a < modelHeader.PropertyCount; a++)
             {
-                var propertyHeader = protocol.ReadModelPropertyHeader();
+                var propertyHeader = protocol.ReadModelPropertyStart();
 
                 switch (propertyHeader.PropertyName)
                 {
@@ -57,6 +58,8 @@ namespace Axon
                     default:
                         throw new Exception("Property " + propertyHeader.PropertyName + " not recognized");
                 }
+
+                protocol.ReadModelPropertyEnd();
             }
         }
 

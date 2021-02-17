@@ -1,0 +1,64 @@
+context: "./alchemy/models.yml"
+workflows:
+  - name: Common (.NET Standard 2.0)
+    stages:
+      - name: Wellspring -> CSharp
+        transform:
+          module: "@greenheck/alchemy-wellspring/transforms/csharp-core-common"
+          definitions:
+            - name: core
+              namespace: Cfs.Drawing.Core
+        renderer: "@greenheck/alchemy-common/renderers/yaml.yml"
+        output: .alchemist/${qualifier}/core.yml
+      - name: Render CSharp
+        renderer: "@greenheck/alchemy-csharp/renderers/csharp.yml"
+        output: ${qualifier}/Common.cs
+  - name: Volatile (.NET Standard 2.0)
+    stages:
+      - name: Wellspring -> CSharp
+        transform:
+          module: "@greenheck/alchemy-wellspring/transforms/csharp-volatile"
+          commonDefinitions:
+            - name: core
+              namespace: Cfs.Drawing.Core
+          definitions:
+            - name: core
+              namespace: Cfs.Drawing.Core
+        renderer: "@greenheck/alchemy-common/renderers/yaml.yml"
+        output: .alchemist/${qualifier}/volatile.yml
+      - name: Render CSharp
+        renderer:
+          engine: "@jlekie/alchemist-handlebars"
+          template: "@greenheck/alchemy-csharp#templates/csharp.hbs"
+          partials:
+            - "@greenheck/alchemy-csharp#templates/csharp/**/*.hbs"
+            - "@greenheck/alchemy-csharp#templates/implementations/common/**/*.hbs"
+            - "@greenheck/alchemy-csharp#templates/implementations/core/**/*.hbs"
+            - "./alchemy/partials/**/*.hbs"
+        output: ${qualifier}/Volatile.cs
+  - name: Immutable (.NET Standard 2.0)
+    stages:
+      - name: Wellspring -> CSharp
+        transform:
+          module: "@greenheck/alchemy-wellspring/transforms/csharp-immutable"
+          commonDefinitions:
+            - name: core
+              namespace: Cfs.Drawing.Core
+          volatileDefinitions:
+            - name: core
+              namespace: Cfs.Drawing.Core
+          definitions:
+            - name: core
+              namespace: Cfs.Drawing.Core.Immutable
+        renderer: "@greenheck/alchemy-common/renderers/yaml.yml"
+        output: .alchemist/${qualifier}/immutable.yml
+      - name: Render CSharp
+        renderer:
+          engine: "@jlekie/alchemist-handlebars"
+          template: "@greenheck/alchemy-csharp#templates/csharp.hbs"
+          partials:
+            - "@greenheck/alchemy-csharp#templates/csharp/**/*.hbs"
+            - "@greenheck/alchemy-csharp#templates/implementations/common/**/*.hbs"
+            - "@greenheck/alchemy-csharp#templates/implementations/core/**/*.hbs"
+            - "./alchemy/partials/**/*.hbs"
+        output: ${qualifier}/Immutable.cs

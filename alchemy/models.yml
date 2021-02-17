@@ -1,0 +1,12 @@
+diagnostics:
+  models:
+    - name: distributedActivity
+      properties:
+        - name: id
+          type: string
+        - name: parentId
+          type: string
+        - name: operationName
+          type: string
+        - name: startTimestamp
+          type: int64

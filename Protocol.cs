@@ -1,70 +1,72 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Axon
 {
     public interface IProtocol
     {
-        Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        Task WriteData(ITransport transport, string messageId, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
+        Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
 
-        Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
-        Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
-        Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
-        Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
+        Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
+        Task ReadData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler);
+        Task ReadData(ITransport transport, string messageId, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, string messageId, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler);
 
-        Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, IDictionary<string, byte[]>> handler);
-        Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, IDictionary<string, byte[]>, TResult> handler);
+        Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler);
+        Task ReadTaggedData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, string, ITransportMetadata> handler);
+        Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler);
+        Task<TResult> ReadTaggedData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, string, ITransportMetadata, TResult> handler);
 
-        Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
+        Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
 
-        Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
+        Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
+        Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
     }
 
     public abstract class AProtocol : IProtocol
     {
-        public abstract Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        public virtual Task WriteData(ITransport transport, string messageId, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
+        public abstract Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        public abstract Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
 
-        public abstract Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
-        public abstract Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
-        public virtual Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
-        {
-            throw new NotImplementedException();
-        }
-        public virtual Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
+        public abstract Task ReadData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
+        public abstract Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        public abstract Task<TResult> ReadData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        public abstract Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler);
+        public abstract Task ReadData(ITransport transport, string messageId, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
+        public abstract Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler);
+        public abstract Task<TResult> ReadData<TResult>(ITransport transport, string messageId, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler);
 
-        public virtual Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, IDictionary<string, byte[]>> handler)
-        {
-            throw new NotImplementedException();
-        }
-        public virtual Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, IDictionary<string, byte[]>, TResult> handler)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler);
+        public abstract Task ReadTaggedData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, string, ITransportMetadata> handler);
+        public abstract Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler);
+        public abstract Task<TResult> ReadTaggedData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, string, ITransportMetadata, TResult> handler);
 
-        public abstract Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
-        public abstract Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        public abstract Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        public abstract Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
+        public abstract Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
+        public abstract Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
 
-        public virtual Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler);
+        public abstract Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
     }
 
     public interface IProtocolReader
     {
-        ITransport Transport { get; }
-        IProtocol Protocol { get; }
-
         string ReadStringValue();
         bool ReadBooleanValue();
         byte ReadByteValue();
@@ -76,45 +78,42 @@ namespace Axon
         T ReadEnumValue<T>() where T : struct, IConvertible;
         object ReadIndeterminateValue();
 
-        RequestHeader ReadRequestHeader();
-        RequestArgumentHeader ReadRequestArgumentHeader();
-        ResponseHeader ReadResponseHeader();
-        ResponseArgumentHeader ReadResponseArgumentHeader();
-        ModelHeader ReadModelHeader();
-        ModelPropertyHeader ReadModelPropertyHeader();
-        ArrayHeader ReadArrayHeader();
-        ArrayItemHeader ReadArrayItemHeader();
-        DictionaryHeader ReadDictionaryHeader();
-        DictionaryItemHeader ReadDictionaryItemHeader();
-        IndefiniteValueHeader ReadIndefiniteValueHeader();
+        RequestHeader ReadRequestStart();
+        void ReadRequestEnd();
+
+        RequestArgumentHeader ReadRequestArgumentStart();
+        void ReadRequestArgumentEnd();
+
+        ResponseHeader ReadResponseStart();
+        void ReadResponseEnd();
+
+        ResponseArgumentHeader ReadResponseArgumentStart();
+        void ReadResponseArgumentEnd();
+
+        ModelHeader ReadModelStart();
+        void ReadModelEnd();
+
+        ModelPropertyHeader ReadModelPropertyStart();
+        void ReadModelPropertyEnd();
+
+        ArrayHeader ReadArrayStart();
+        void ReadArrayEnd();
+
+        ArrayItemHeader ReadArrayItemStart();
+        void ReadArrayItemEnd();
+
+        DictionaryHeader ReadDictionaryStart();
+        void ReadDictionaryEnd();
+
+        DictionaryItemHeader ReadDictionaryItemStart();
+        void ReadDictionaryItemEnd();
+
+        IndefiniteValueHeader ReadIndefiniteValueStart();
+        void ReadIndefiniteValueEnd();
     }
 
     public abstract class AProtocolReader : IProtocolReader
     {
-        private readonly ITransport transport;
-        public ITransport Transport
-        {
-            get
-            {
-                return this.transport;
-            }
-        }
-
-        private readonly IProtocol protocol;
-        public IProtocol Protocol
-        {
-            get
-            {
-                return this.protocol;
-            }
-        }
-
-        public AProtocolReader(ITransport transport, IProtocol protocol)
-        {
-            this.transport = transport;
-            this.protocol = protocol;
-        }
-
         public abstract string ReadStringValue();
         public abstract bool ReadBooleanValue();
         public abstract byte ReadByteValue();
@@ -126,89 +125,117 @@ namespace Axon
         public abstract T ReadEnumValue<T>() where T : struct, IConvertible;
         public abstract object ReadIndeterminateValue();
 
-        public RequestHeader ReadRequestHeader()
-        {
-            var actionName = this.ReadStringValue();
-            var argumentCount = this.ReadIntegerValue();
+        public abstract RequestHeader ReadRequestStart();
+        public abstract void ReadRequestEnd();
 
-            return new RequestHeader(actionName, argumentCount);
-        }
-        public RequestArgumentHeader ReadRequestArgumentHeader()
-        {
-            var argumentName = this.ReadStringValue();
-            var type = this.ReadStringValue();
+        public abstract RequestArgumentHeader ReadRequestArgumentStart();
+        public abstract void ReadRequestArgumentEnd();
 
-            return new RequestArgumentHeader(argumentName, type);
-        }
-        public ResponseHeader ReadResponseHeader()
-        {
-            var success = this.ReadBooleanValue();
-            var type = this.ReadStringValue();
-            var argumentCount = this.ReadIntegerValue();
+        public abstract ResponseHeader ReadResponseStart();
+        public abstract void ReadResponseEnd();
 
-            return new ResponseHeader(success, type, argumentCount);
-        }
-        public ResponseArgumentHeader ReadResponseArgumentHeader()
-        {
-            var argumentName = this.ReadStringValue();
-            var type = this.ReadStringValue();
+        public abstract ResponseArgumentHeader ReadResponseArgumentStart();
+        public abstract void ReadResponseArgumentEnd();
 
-            return new ResponseArgumentHeader(argumentName, type);
-        }
-        public ModelHeader ReadModelHeader()
-        {
-            var modelName = this.ReadStringValue();
-            var propertyCount = this.ReadIntegerValue();
+        public abstract ModelHeader ReadModelStart();
+        public abstract void ReadModelEnd();
 
-            return new ModelHeader(modelName, propertyCount);
-        }
-        public ModelPropertyHeader ReadModelPropertyHeader()
-        {
-            var propertyName = this.ReadStringValue();
-            var type = this.ReadStringValue();
+        public abstract ModelPropertyHeader ReadModelPropertyStart();
+        public abstract void ReadModelPropertyEnd();
 
-            return new ModelPropertyHeader(propertyName, type);
-        }
-        public ArrayHeader ReadArrayHeader()
-        {
-            var itemCount = this.ReadIntegerValue();
+        public abstract ArrayHeader ReadArrayStart();
+        public abstract void ReadArrayEnd();
 
-            return new ArrayHeader(itemCount);
-        }
-        public ArrayItemHeader ReadArrayItemHeader()
-        {
-            var type = this.ReadStringValue();
+        public abstract ArrayItemHeader ReadArrayItemStart();
+        public abstract void ReadArrayItemEnd();
 
-            return new ArrayItemHeader(type);
-        }
-        public DictionaryHeader ReadDictionaryHeader()
-        {
-            var recordCount = this.ReadIntegerValue();
+        public abstract DictionaryHeader ReadDictionaryStart();
+        public abstract void ReadDictionaryEnd();
 
-            return new DictionaryHeader(recordCount);
-        }
-        public DictionaryItemHeader ReadDictionaryItemHeader()
-        {
-            var keyType = this.ReadStringValue();
-            var valueType = this.ReadStringValue();
+        public abstract DictionaryItemHeader ReadDictionaryItemStart();
+        public abstract void ReadDictionaryItemEnd();
 
-            return new DictionaryItemHeader(keyType, valueType);
-        }
-        public IndefiniteValueHeader ReadIndefiniteValueHeader()
-        {
-            var valueType = this.ReadStringValue();
+        public abstract IndefiniteValueHeader ReadIndefiniteValueStart();
+        public abstract void ReadIndefiniteValueEnd();
 
-            return new IndefiniteValueHeader(valueType);
-        }
+        //public virtual RequestHeader ReadRequestStart()
+        //{
+        //    var actionName = this.ReadStringValue();
+        //    var argumentCount = this.ReadIntegerValue();
+
+        //    return new RequestHeader(actionName, argumentCount);
+        //}
+        //public virtual RequestArgumentHeader ReadRequestArgumentStart()
+        //{
+        //    var argumentName = this.ReadStringValue();
+        //    var type = this.ReadStringValue();
+
+        //    return new RequestArgumentHeader(argumentName, type);
+        //}
+        //public virtual ResponseHeader ReadResponseStart()
+        //{
+        //    var success = this.ReadBooleanValue();
+        //    var type = this.ReadStringValue();
+        //    var argumentCount = this.ReadIntegerValue();
+
+        //    return new ResponseHeader(success, type, argumentCount);
+        //}
+        //public virtual ResponseArgumentHeader ReadResponseArgumentStart()
+        //{
+        //    var argumentName = this.ReadStringValue();
+        //    var type = this.ReadStringValue();
+
+        //    return new ResponseArgumentHeader(argumentName, type);
+        //}
+        //public virtual ModelHeader ReadModelStart()
+        //{
+        //    var modelName = this.ReadStringValue();
+        //    var propertyCount = this.ReadIntegerValue();
+
+        //    return new ModelHeader(modelName, propertyCount);
+        //}
+        //public virtual ModelPropertyHeader ReadModelPropertyStart()
+        //{
+        //    var propertyName = this.ReadStringValue();
+        //    var type = this.ReadStringValue();
+
+        //    return new ModelPropertyHeader(propertyName, type);
+        //}
+        //public virtual ArrayHeader ReadArrayStart()
+        //{
+        //    var itemCount = this.ReadIntegerValue();
+
+        //    return new ArrayHeader(itemCount);
+        //}
+        //public virtual ArrayItemHeader ReadArrayItemStart()
+        //{
+        //    var type = this.ReadStringValue();
+
+        //    return new ArrayItemHeader(type);
+        //}
+        //public virtual DictionaryHeader ReadDictionaryStart()
+        //{
+        //    var recordCount = this.ReadIntegerValue();
+
+        //    return new DictionaryHeader(recordCount);
+        //}
+        //public virtual DictionaryItemHeader ReadDictionaryItemStart()
+        //{
+        //    var keyType = this.ReadStringValue();
+        //    var valueType = this.ReadStringValue();
+
+        //    return new DictionaryItemHeader(keyType, valueType);
+        //}
+        //public virtual IndefiniteValueHeader ReadIndefiniteValueStart()
+        //{
+        //    var valueType = this.ReadStringValue();
+
+        //    return new IndefiniteValueHeader(valueType);
+        //}
     }
 
     public interface IProtocolWriter
     {
-        ITransport Transport { get; }
-        IProtocol Protocol { get; }
-
-        // Task WriteData(Action<IProtocolWriter> handler);
-
         void WriteStringValue(string value);
         void WriteBooleanValue(bool value);
         void WriteByteValue(byte value);
@@ -220,66 +247,86 @@ namespace Axon
         void WriteEnumValue<T>(T value) where T : struct, IConvertible;
         void WriteIndeterminateValue(object value);
 
-        void WriteRequestHeader(RequestHeader header);
-        void WriteRequestHeader(string actionName, int argumentCount);
+        void WriteRequestStart(RequestHeader header);
+        void WriteRequestStart(string actionName, int argumentCount);
+        void WriteRequestEnd();
 
-        void WriteRequestArgumentHeader(RequestArgumentHeader header);
-        void WriteRequestArgumentHeader(string argumentName, string type);
+        void WriteRequestArgumentStart(RequestArgumentHeader header);
+        void WriteRequestArgumentStart(string argumentName, string type);
+        void WriteRequestArgumentEnd();
 
-        void WriteResponseHeader(ResponseHeader header);
-        void WriteResponseHeader(bool success, string type, int argumentCount = 0);
+        void WriteResponseStart(ResponseHeader header);
+        void WriteResponseStart(bool success, string type, int argumentCount = 0);
+        void WriteResponseEnd();
 
-        void WriteResponseArgumentHeader(ResponseArgumentHeader header);
-        void WriteResponseArgumentHeader(string argumentName, string type);
+        void WriteResponseArgumentStart(ResponseArgumentHeader header);
+        void WriteResponseArgumentStart(string argumentName, string type);
+        void WriteResponseArgumentEnd();
 
-        void WriteModelHeader(ModelHeader header);
-        void WriteModelHeader(string modelName, int propertyCount);
+        void WriteModelStart(ModelHeader header);
+        void WriteModelStart(string modelName, int propertyCount);
+        void WriteModelEnd();
 
-        void WriteModelPropertyHeader(ModelPropertyHeader header);
-        void WriteModelPropertyHeader(string propertyName, string type);
+        void WriteModelPropertyStart(ModelPropertyHeader header);
+        void WriteModelPropertyStart(string propertyName, string type);
+        void WriteModelPropertyEnd();
 
-        void WriteArrayHeader(ArrayHeader header);
-        void WriteArrayHeader(int itemCount);
+        void WriteArrayStart(ArrayHeader header);
+        void WriteArrayStart(int itemCount);
+        void WriteArrayEnd();
 
-        void WriteArrayItemHeader(ArrayItemHeader header);
-        void WriteArrayItemHeader(string type);
+        void WriteArrayItemStart(ArrayItemHeader header);
+        void WriteArrayItemStart(string type);
+        void WriteArrayItemEnd();
 
-        void WriteDictionaryHeader(DictionaryHeader header);
-        void WriteDictionaryHeader(int recordCount);
+        void WriteDictionaryStart(DictionaryHeader header);
+        void WriteDictionaryStart(int recordCount);
+        void WriteDictionaryEnd();
 
-        void WriteDictionaryItemHeader(DictionaryItemHeader header);
-        void WriteDictionaryItemHeader(string keyType, string valueType);
+        void WriteDictionaryItemStart(DictionaryItemHeader header);
+        void WriteDictionaryItemStart(string keyType, string valueType);
+        void WriteDictionaryItemEnd();
 
-        void WriteIndefiniteValueHeader(IndefiniteValueHeader header);
-        void WriteIndefiniteValueHeader(string valueType);
+        void WriteIndefiniteValueStart(IndefiniteValueHeader header);
+        void WriteIndefiniteValueStart(string valueType);
+        void WriteIndefiniteValueEnd();
+
+        //void WriteRequestStart(RequestHeader header);
+        //void WriteRequestEnd();
+
+        //void WriteRequestArgumentStart(RequestArgumentHeader header);
+        //void WriteRequestArgumentEnd();
+
+        //void WriteResponseStart(ResponseHeader header);
+        //void WriteResponseEnd();
+
+        //void WriteResponseArgumentStart(ResponseArgumentHeader header);
+        //void WriteResponseArgumentEnd();
+
+        //void WriteModelStart(ModelHeader header);
+        //void WriteModelEnd();
+
+        //void WriteModelPropertyStart(ModelPropertyHeader header);
+        //void WriteModelPropertyEnd();
+
+        //void WriteArrayStart(ArrayHeader header);
+        //void WriteArrayEnd();
+
+        //void WriteArrayItemStart(ArrayItemHeader header);
+        //void WriteArrayItemEnd();
+
+        //void WriteDictionaryStart(DictionaryHeader header);
+        //void WriteDictionaryEnd();
+
+        //void WriteDictionaryItemStart(DictionaryItemHeader header);
+        //void WriteDictionaryItemEnd();
+
+        //void WriteIndefiniteValueStart(IndefiniteValueHeader header);
+        //void WriteIndefiniteValueEnd();
     }
 
     public abstract class AProtocolWriter : IProtocolWriter
     {
-        private readonly ITransport transport;
-        public ITransport Transport
-        {
-            get
-            {
-                return this.transport;
-            }
-        }
-
-        private readonly IProtocol protocol;
-        public IProtocol Protocol
-        {
-            get
-            {
-                return this.protocol;
-            }
-        }
-
-        public AProtocolWriter(ITransport transport, IProtocol protocol)
-        {
-            this.transport = transport;
-            this.protocol = protocol;
-        }
-
         // public abstract Task WriteData(Action<IProtocolWriter> handler);
 
         public abstract void WriteStringValue(string value);
@@ -293,111 +340,252 @@ namespace Axon
         public abstract void WriteEnumValue<T>(T value) where T : struct, IConvertible;
         public abstract void WriteIndeterminateValue(object value);
 
-        public void WriteRequestHeader(RequestHeader header)
+        public abstract void WriteRequestStart(RequestHeader header);
+        public abstract void WriteRequestEnd();
+
+        public abstract void WriteRequestArgumentStart(RequestArgumentHeader header);
+        public abstract void WriteRequestArgumentEnd();
+
+        public abstract void WriteResponseStart(ResponseHeader header);
+        public abstract void WriteResponseEnd();
+
+        public abstract void WriteResponseArgumentStart(ResponseArgumentHeader header);
+        public abstract void WriteResponseArgumentEnd();
+
+        public abstract void WriteModelStart(ModelHeader header);
+        public abstract void WriteModelEnd();
+
+        public abstract void WriteModelPropertyStart(ModelPropertyHeader header);
+        public abstract void WriteModelPropertyEnd();
+
+        public abstract void WriteArrayStart(ArrayHeader header);
+        public abstract void WriteArrayEnd();
+
+        public abstract void WriteArrayItemStart(ArrayItemHeader header);
+        public abstract void WriteArrayItemEnd();
+
+        public abstract void WriteDictionaryStart(DictionaryHeader header);
+        public abstract void WriteDictionaryEnd();
+
+        public abstract void WriteDictionaryItemStart(DictionaryItemHeader header);
+        public abstract void WriteDictionaryItemEnd();
+
+        public abstract void WriteIndefiniteValueStart(IndefiniteValueHeader header);
+        public abstract void WriteIndefiniteValueEnd();
+
+        //public void WriteRequestStart(RequestHeader header)
+        //{
+        //    this.WriteStringValue(header.ActionName);
+        //    this.WriteIntegerValue(header.ArgumentCount);
+        //}
+        public void WriteRequestStart(string actionName, int argumentCount)
         {
-            this.WriteStringValue(header.ActionName);
-            this.WriteIntegerValue(header.ArgumentCount);
-        }
-        public void WriteRequestHeader(string actionName, int argumentCount)
-        {
-            this.WriteRequestHeader(new RequestHeader(actionName, argumentCount));
+            this.WriteRequestStart(new RequestHeader(actionName, argumentCount));
         }
 
-        public void WriteRequestArgumentHeader(RequestArgumentHeader header)
+        //public void WriteRequestArgumentStart(RequestArgumentHeader header)
+        //{
+        //    this.WriteStringValue(header.ArgumentName);
+        //    this.WriteStringValue(header.Type);
+        //}
+        public void WriteRequestArgumentStart(string argumentName, string type)
         {
-            this.WriteStringValue(header.ArgumentName);
-            this.WriteStringValue(header.Type);
-        }
-        public void WriteRequestArgumentHeader(string argumentName, string type)
-        {
-            this.WriteRequestArgumentHeader(new RequestArgumentHeader(argumentName, type));
-        }
-
-        public void WriteResponseHeader(ResponseHeader header)
-        {
-            this.WriteBooleanValue(header.Success);
-            this.WriteStringValue(header.Type);
-            this.WriteIntegerValue(header.ArgumentCount);
-        }
-        public void WriteResponseHeader(bool success, string type, int argumentCount = 0)
-        {
-            this.WriteResponseHeader(new ResponseHeader(success, type, argumentCount));
+            this.WriteRequestArgumentStart(new RequestArgumentHeader(argumentName, type));
         }
 
-        public void WriteResponseArgumentHeader(ResponseArgumentHeader header)
+        //public void WriteResponseStart(ResponseHeader header)
+        //{
+        //    this.WriteBooleanValue(header.Success);
+        //    this.WriteStringValue(header.Type);
+        //    this.WriteIntegerValue(header.ArgumentCount);
+        //}
+        public void WriteResponseStart(bool success, string type, int argumentCount = 0)
         {
-            this.WriteStringValue(header.ArgumentName);
-            this.WriteStringValue(header.Type);
-        }
-        public void WriteResponseArgumentHeader(string argumentName, string type)
-        {
-            this.WriteResponseArgumentHeader(new ResponseArgumentHeader(argumentName, type));
-        }
-
-        public void WriteModelHeader(ModelHeader header)
-        {
-            this.WriteStringValue(header.ModelName);
-            this.WriteIntegerValue(header.PropertyCount);
-        }
-        public void WriteModelHeader(string modelName, int propertyCount)
-        {
-            this.WriteModelHeader(new ModelHeader(modelName, propertyCount));
+            this.WriteResponseStart(new ResponseHeader(success, type, argumentCount));
         }
 
-        public void WriteModelPropertyHeader(ModelPropertyHeader header)
+        //public void WriteResponseArgumentStart(ResponseArgumentHeader header)
+        //{
+        //    this.WriteStringValue(header.ArgumentName);
+        //    this.WriteStringValue(header.Type);
+        //}
+        public void WriteResponseArgumentStart(string argumentName, string type)
         {
-            this.WriteStringValue(header.PropertyName);
-            this.WriteStringValue(header.Type);
-        }
-        public void WriteModelPropertyHeader(string propertyName, string type)
-        {
-            this.WriteModelPropertyHeader(new ModelPropertyHeader(propertyName, type));
-        }
-
-        public void WriteArrayHeader(ArrayHeader header)
-        {
-            this.WriteIntegerValue(header.ItemCount);
-        }
-        public void WriteArrayHeader(int itemCount)
-        {
-            this.WriteArrayHeader(new ArrayHeader(itemCount));
+            this.WriteResponseArgumentStart(new ResponseArgumentHeader(argumentName, type));
         }
 
-        public void WriteArrayItemHeader(ArrayItemHeader header)
+        //public void WriteModelStart(ModelHeader header)
+        //{
+        //    this.WriteStringValue(header.ModelName);
+        //    this.WriteIntegerValue(header.PropertyCount);
+        //}
+        public void WriteModelStart(string modelName, int propertyCount)
         {
-            this.WriteStringValue(header.Type);
-        }
-        public void WriteArrayItemHeader(string type)
-        {
-            this.WriteArrayItemHeader(new ArrayItemHeader(type));
-        }
-
-        public void WriteDictionaryHeader(DictionaryHeader header)
-        {
-            this.WriteIntegerValue(header.RecordCount);
-        }
-        public void WriteDictionaryHeader(int recordCount)
-        {
-            this.WriteDictionaryHeader(new DictionaryHeader(recordCount));
+            this.WriteModelStart(new ModelHeader(modelName, propertyCount));
         }
 
-        public void WriteDictionaryItemHeader(DictionaryItemHeader header)
+        //public void WriteModelPropertyStart(ModelPropertyHeader header)
+        //{
+        //    this.WriteStringValue(header.PropertyName);
+        //    this.WriteStringValue(header.Type);
+        //}
+        public void WriteModelPropertyStart(string propertyName, string type)
         {
-            this.WriteStringValue(header.KeyType);
-            this.WriteStringValue(header.ValueType);
-        }
-        public void WriteDictionaryItemHeader(string keyType, string valueType)
-        {
-            this.WriteDictionaryItemHeader(new DictionaryItemHeader(keyType, valueType));
+            this.WriteModelPropertyStart(new ModelPropertyHeader(propertyName, type));
         }
 
-        public void WriteIndefiniteValueHeader(IndefiniteValueHeader header)
+        //public void WriteArrayStart(ArrayHeader header)
+        //{
+        //    this.WriteIntegerValue(header.ItemCount);
+        //}
+        public void WriteArrayStart(int itemCount)
         {
-            this.WriteStringValue(header.ValueType);
+            this.WriteArrayStart(new ArrayHeader(itemCount));
         }
-        public void WriteIndefiniteValueHeader(string valueType)
+
+        //public void WriteArrayItemStart(ArrayItemHeader header)
+        //{
+        //    this.WriteStringValue(header.Type);
+        //}
+        public void WriteArrayItemStart(string type)
         {
-            this.WriteIndefiniteValueHeader(new IndefiniteValueHeader(valueType));
+            this.WriteArrayItemStart(new ArrayItemHeader(type));
         }
+
+        //public void WriteDictionaryStart(DictionaryHeader header)
+        //{
+        //    this.WriteIntegerValue(header.RecordCount);
+        //}
+        public void WriteDictionaryStart(int recordCount)
+        {
+            this.WriteDictionaryStart(new DictionaryHeader(recordCount));
+        }
+
+        //public void WriteDictionaryItemStart(DictionaryItemHeader header)
+        //{
+        //    this.WriteStringValue(header.KeyType);
+        //    this.WriteStringValue(header.ValueType);
+        //}
+        public void WriteDictionaryItemStart(string keyType, string valueType)
+        {
+            this.WriteDictionaryItemStart(new DictionaryItemHeader(keyType, valueType));
+        }
+
+        //public void WriteIndefiniteValueStart(IndefiniteValueHeader header)
+        //{
+        //    this.WriteStringValue(header.ValueType);
+        //}
+        public void WriteIndefiniteValueStart(string valueType)
+        {
+            this.WriteIndefiniteValueStart(new IndefiniteValueHeader(valueType));
+        }
+
+        //public virtual void WriteRequestStart(RequestHeader header)
+        //{
+        //}
+        //public void WriteRequestEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteRequestArgumentStart(RequestArgumentHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteRequestArgumentEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteResponseStart(ResponseHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteResponseEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteResponseArgumentStart(ResponseArgumentHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteResponseArgumentEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteModelStart(ModelHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteModelEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteModelPropertyStart(ModelPropertyHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteModelPropertyEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteArrayStart(ArrayHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteArrayEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteArrayItemStart(ArrayItemHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteArrayItemEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteDictionaryStart(DictionaryHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteDictionaryEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteDictionaryItemStart(DictionaryItemHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteDictionaryItemEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteIndefiniteValueStart(IndefiniteValueHeader header)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public void WriteIndefiniteValueEnd()
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
