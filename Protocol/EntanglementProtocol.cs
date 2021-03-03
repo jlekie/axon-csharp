@@ -10,676 +10,914 @@ using System.Buffers;
 
 namespace Axon
 {
+    //public class EntanglementProtocol : AProtocol
+    //{
+    //    public readonly bool Compress;
+
+    //    private Microsoft.IO.RecyclableMemoryStreamManager MemoryStreamManager { get; }
+
+    //    public EntanglementProtocol(Microsoft.IO.RecyclableMemoryStreamManager memoryStreamManager) : base()
+    //    {
+    //        this.MemoryStreamManager = memoryStreamManager;
+    //        this.Compress = false;
+    //    }
+    //    public EntanglementProtocol(Microsoft.IO.RecyclableMemoryStreamManager memoryStreamManager, bool compress) : base()
+    //    {
+    //        this.MemoryStreamManager = memoryStreamManager;
+    //        this.Compress = compress;
+    //    }
+
+    //    public T Read<T>(byte[] data, Func<IProtocolReader, T> handler)
+    //    {
+    //        var buffer = data.AsMemory();
+    //        var reader = new EntanglementProtocolBufferReader(buffer);
+
+    //        return handler(reader);
+
+    //        //using (var buffer = this.MemoryStreamManager.GetStream(data))
+    //        //{
+    //        //    if (this.Compress)
+    //        //    {
+    //        //        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //        //        {
+    //        //            var reader = new EntanglementProtocolReader(gzip);
+
+    //        //            return handler(reader);
+    //        //        }
+    //        //    }
+    //        //    else
+    //        //    {
+    //        //        var reader = new EntanglementProtocolReader(buffer);
+
+    //        //        return handler(reader);
+    //        //    }
+    //        //}
+    //    }
+    //    public byte[] Write(Action<IProtocolWriter> handler)
+    //    {
+    //        //using (var stream = this.MemoryStreamManager.GetStream())
+    //        //{
+    //        //    var writer = new EntanglementProtocolBufferWriter(stream);
+    //        //    handler(writer);
+
+    //        //    return writer.ToArray();
+    //        //}
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+    //                writer.Stats.WriteToConsole();
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            return data.ToArray();
+    //        }
+    //    }
+
+    //    public T ReadSpan<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
+    //    {
+    //        var reader = new EntanglementProtocolBufferReader(data);
+
+    //        return handler(reader);
+    //    }
+    //    public Memory<byte> WriteSpan(Action<IProtocolWriter> handler)
+    //    {
+    //        var writer = new EntanglementProtocolBufferWriter();
+    //        handler(writer);
+
+    //        writer.Stats.WriteToConsole();
+
+    //        return writer.Span.ToArray();
+    //    }
+
+    //    public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
+    //    {
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            await transport.Send(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
+    //        }
+    //    }
+    //    public override async Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+    //    {
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            await transport.Send(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+    //        }
+    //    }
+    //    public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
+    //    {
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            await transport.Send(messageId, new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
+    //        }
+    //    }
+    //    public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+    //    {
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            await transport.Send(messageId, new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+    //        }
+    //    }
+
+    //    public override async Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
+    //    {
+    //        var receivedData = await transport.Receive();
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task ReadData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
+    //    {
+    //        var receivedData = await transport.Receive(cancellationToken);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+    //    {
+    //        var receivedData = await transport.Receive();
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    return handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                return handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task<TResult> ReadData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+    //    {
+    //        var receivedData = await transport.Receive(cancellationToken);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    return handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                return handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
+    //    {
+    //        var receivedData = await transport.Receive(messageId);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task ReadData(ITransport transport, string messageId, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
+    //    {
+    //        var receivedData = await transport.Receive(messageId, cancellationToken);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+    //    {
+    //        var receivedData = await transport.Receive(messageId);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    return handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                return handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
+    //    {
+    //        var receivedData = await transport.Receive(messageId, cancellationToken);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    return handler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                return handler(reader, receivedData.Metadata);
+    //            }
+    //        }
+    //    }
+
+    //    public override async Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler)
+    //    {
+    //        var receivedData = await transport.ReceiveTagged();
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task ReadTaggedData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, string, ITransportMetadata> handler)
+    //    {
+    //        var receivedData = await transport.ReceiveTagged(cancellationToken);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
+    //    {
+    //        var receivedData = await transport.ReceiveTagged();
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    return handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                return handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //            }
+    //        }
+    //    }
+    //    public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
+    //    {
+    //        var receivedData = await transport.ReceiveTagged(cancellationToken);
+
+    //        using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                {
+    //                    var reader = new EntanglementProtocolReader(gzip);
+
+    //                    return handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var reader = new EntanglementProtocolReader(buffer);
+
+    //                return handler(reader, receivedData.Id, receivedData.Message.Metadata);
+    //            }
+    //        }
+    //    }
+
+    //    public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
+    //    {
+    //        Func<Task<TransportMessage>> receiveHandler;
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
+    //        }
+
+    //        return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
+    //            var receivedData = await receiveHandler();
+
+    //            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //            {
+    //                if (this.Compress)
+    //                {
+    //                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                    {
+    //                        var reader = new EntanglementProtocolReader(gzip);
+
+    //                        readHandler(reader, receivedData.Metadata);
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    var reader = new EntanglementProtocolReader(buffer);
+
+    //                    readHandler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //        });
+    //    }
+    //    public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+    //    {
+    //        Func<Task<TransportMessage>> receiveHandler;
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+    //        }
+
+    //        return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
+    //            var receivedData = await receiveHandler();
+
+    //            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //            {
+    //                if (this.Compress)
+    //                {
+    //                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                    {
+    //                        var reader = new EntanglementProtocolReader(gzip);
+
+    //                        readHandler(reader, receivedData.Metadata);
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    var reader = new EntanglementProtocolReader(buffer);
+
+    //                    readHandler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //        });
+    //    }
+    //    public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
+    //    {
+    //        Func<Task<TransportMessage>> receiveHandler;
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
+    //        }
+
+    //        return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
+    //            var receivedData = await receiveHandler();
+
+    //            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //            {
+    //                if (this.Compress)
+    //                {
+    //                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                    {
+    //                        var reader = new EntanglementProtocolReader(gzip);
+
+    //                        return readHandler(reader, receivedData.Metadata);
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    var reader = new EntanglementProtocolReader(buffer);
+
+    //                    return readHandler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //        });
+    //    }
+    //    public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
+    //    {
+    //        Func<Task<TransportMessage>> receiveHandler;
+    //        using (var buffer = this.MemoryStreamManager.GetStream())
+    //        {
+    //            if (this.Compress)
+    //            {
+    //                using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
+    //                {
+    //                    var writer = new EntanglementProtocolWriter(gzip);
+    //                    handler(writer);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                var writer = new EntanglementProtocolWriter(buffer);
+    //                handler(writer);
+
+    //                buffer.Position = 0;
+    //            }
+
+    //            buffer.Flush();
+    //            if (!buffer.TryGetBuffer(out var data))
+    //                throw new Exception("Could not get data buffer");
+
+    //            receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+    //        }
+
+    //        return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
+    //            var receivedData = await receiveHandler();
+
+    //            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
+    //            {
+    //                if (this.Compress)
+    //                {
+    //                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
+    //                    {
+    //                        var reader = new EntanglementProtocolReader(gzip);
+
+    //                        return readHandler(reader, receivedData.Metadata);
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    var reader = new EntanglementProtocolReader(buffer);
+
+    //                    return readHandler(reader, receivedData.Metadata);
+    //                }
+    //            }
+    //        });
+    //    }
+
+    //    public override async Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
+    //    {
+    //        throw new NotImplementedException();
+    //        //var receiveResults = await transport.ReceiveAndSend();
+
+    //        //var receiveBuffer = this.MemoryStreamManager.GetStream(receiveResults.ReceivedData.Data);
+    //        //var reader = new EntanglementProtocolReader(transport, this, receiveBuffer);
+    //        //handler(reader, receiveResults.ReceivedData.Metadata);
+
+    //        //return new Func<Action<IProtocolWriter>, Task>(async (writeHandler) =>
+    //        //{
+    //        //    using (var buffer = this.MemoryStreamManager.GetStream())
+    //        //    {
+    //        //        var writer = new EntanglementProtocolWriter(transport, this, buffer);
+    //        //        writeHandler(writer);
+
+    //        //        buffer.Position = 0;
+    //        //        var data = buffer.ToArray();
+    //        //        await receiveResults.SendHandler(data, receiveResults.ReceivedData.Metadata);
+    //        //    }
+    //        //});
+    //    }
+    //    public override async Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+    //}
     public class EntanglementProtocol : AProtocol
     {
-        public readonly bool Compress;
-
-        private Microsoft.IO.RecyclableMemoryStreamManager MemoryStreamManager { get; }
-
-        public EntanglementProtocol(Microsoft.IO.RecyclableMemoryStreamManager memoryStreamManager) : base()
+        public EntanglementProtocol()
+            : base()
         {
-            this.MemoryStreamManager = memoryStreamManager;
-            this.Compress = false;
-        }
-        public EntanglementProtocol(Microsoft.IO.RecyclableMemoryStreamManager memoryStreamManager, bool compress) : base()
-        {
-            this.MemoryStreamManager = memoryStreamManager;
-            this.Compress = compress;
         }
 
-        public T Read<T>(byte[] data, Func<IProtocolReader, T> handler)
+        public T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
         {
-            var buffer = data.AsMemory();
-            var reader = new EntanglementProtocolBufferReader(buffer);
+            var reader = new EntanglementProtocolBufferReader(data);
 
             return handler(reader);
-
-            //using (var buffer = this.MemoryStreamManager.GetStream(data))
-            //{
-            //    if (this.Compress)
-            //    {
-            //        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-            //        {
-            //            var reader = new EntanglementProtocolReader(gzip);
-
-            //            return handler(reader);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        var reader = new EntanglementProtocolReader(buffer);
-
-            //        return handler(reader);
-            //    }
-            //}
         }
-        public byte[] Write(Action<IProtocolWriter> handler)
+        public Memory<byte> Write(Action<IProtocolWriter> handler)
         {
-            //using (var stream = this.MemoryStreamManager.GetStream())
-            //{
-            //    var writer = new EntanglementProtocolBufferWriter(stream);
-            //    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-            //    return writer.ToArray();
-            //}
+            //writer.Stats.WriteToConsole();
 
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
-                    writer.Stats.WriteToConsole();
-
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                return data.ToArray();
-            }
+            return writer.Span.ToArray();
         }
 
         public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                await transport.Send(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
-            }
+            await transport.Send(new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
         }
         public override async Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                await transport.Send(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
-            }
+            await transport.Send(new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
         }
         public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                await transport.Send(messageId, new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
-            }
+            await transport.Send(messageId, new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
         }
         public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                await transport.Send(messageId, new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
-            }
+            await transport.Send(messageId, new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
         }
 
         public override async Task ReadData(ITransport transport, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive();
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            handler(reader, receivedData.Metadata);
         }
         public override async Task ReadData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive(cancellationToken);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive();
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        return handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    return handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            return handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive(cancellationToken);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        return handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    return handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            return handler(reader, receivedData.Metadata);
         }
         public override async Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive(messageId);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            handler(reader, receivedData.Metadata);
         }
         public override async Task ReadData(ITransport transport, string messageId, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
         {
             var receivedData = await transport.Receive(messageId, cancellationToken);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive(messageId);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        return handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    return handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            return handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.Receive(messageId, cancellationToken);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        return handler(reader, receivedData.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    return handler(reader, receivedData.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+            return handler(reader, receivedData.Metadata);
         }
 
         public override async Task ReadTaggedData(ITransport transport, Action<IProtocolReader, string, ITransportMetadata> handler)
         {
             var receivedData = await transport.ReceiveTagged();
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Message.Payload);
+            handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
         public override async Task ReadTaggedData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, string, ITransportMetadata> handler)
         {
             var receivedData = await transport.ReceiveTagged(cancellationToken);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Message.Payload);
+            handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
         public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.ReceiveTagged();
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        return handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    return handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Message.Payload);
+            return handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
         public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
         {
             var receivedData = await transport.ReceiveTagged(cancellationToken);
 
-            using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Message.Payload))
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                    {
-                        var reader = new EntanglementProtocolReader(gzip);
-
-                        return handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                    }
-                }
-                else
-                {
-                    var reader = new EntanglementProtocolReader(buffer);
-
-                    return handler(reader, receivedData.Id, receivedData.Message.Metadata);
-                }
-            }
+            var reader = new EntanglementProtocolBufferReader(receivedData.Message.Payload);
+            return handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
 
         public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<TransportMessage>> receiveHandler;
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
-            }
+            var receiveHandler = await transport.SendAndReceive(new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
 
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-                {
-                    if (this.Compress)
-                    {
-                        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                        {
-                            var reader = new EntanglementProtocolReader(gzip);
-
-                            readHandler(reader, receivedData.Metadata);
-                        }
-                    }
-                    else
-                    {
-                        var reader = new EntanglementProtocolReader(buffer);
-
-                        readHandler(reader, receivedData.Metadata);
-                    }
-                }
+                var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+                readHandler(reader, receivedData.Metadata);
             });
         }
         public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            Func<Task<TransportMessage>> receiveHandler;
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
-            }
+            var receiveHandler = await transport.SendAndReceive(new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
 
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-                {
-                    if (this.Compress)
-                    {
-                        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                        {
-                            var reader = new EntanglementProtocolReader(gzip);
-
-                            readHandler(reader, receivedData.Metadata);
-                        }
-                    }
-                    else
-                    {
-                        var reader = new EntanglementProtocolReader(buffer);
-
-                        readHandler(reader, receivedData.Metadata);
-                    }
-                }
+                var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+                readHandler(reader, receivedData.Metadata);
             });
         }
         public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            Func<Task<TransportMessage>> receiveHandler;
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
-            }
+            var receiveHandler = await transport.SendAndReceive(new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)));
 
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-                {
-                    if (this.Compress)
-                    {
-                        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                        {
-                            var reader = new EntanglementProtocolReader(gzip);
-
-                            return readHandler(reader, receivedData.Metadata);
-                        }
-                    }
-                    else
-                    {
-                        var reader = new EntanglementProtocolReader(buffer);
-
-                        return readHandler(reader, receivedData.Metadata);
-                    }
-                }
+                var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+                return readHandler(reader, receivedData.Metadata);
             });
         }
         public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            Func<Task<TransportMessage>> receiveHandler;
-            using (var buffer = this.MemoryStreamManager.GetStream())
-            {
-                if (this.Compress)
-                {
-                    using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
-                    {
-                        var writer = new EntanglementProtocolWriter(gzip);
-                        handler(writer);
-                    }
-                }
-                else
-                {
-                    var writer = new EntanglementProtocolWriter(buffer);
-                    handler(writer);
+            var writer = new EntanglementProtocolBufferWriter();
+            handler(writer);
 
-                    buffer.Position = 0;
-                }
-
-                buffer.Flush();
-                if (!buffer.TryGetBuffer(out var data))
-                    throw new Exception("Could not get data buffer");
-
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
-            }
+            var receiveHandler = await transport.SendAndReceive(new TransportMessage(writer.Span.ToArray(), VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
 
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
 
-                using (var buffer = this.MemoryStreamManager.GetStream(receivedData.Payload))
-                {
-                    if (this.Compress)
-                    {
-                        using (var gzip = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress))
-                        {
-                            var reader = new EntanglementProtocolReader(gzip);
-
-                            return readHandler(reader, receivedData.Metadata);
-                        }
-                    }
-                    else
-                    {
-                        var reader = new EntanglementProtocolReader(buffer);
-
-                        return readHandler(reader, receivedData.Metadata);
-                    }
-                }
+                var reader = new EntanglementProtocolBufferReader(receivedData.Payload);
+                return readHandler(reader, receivedData.Metadata);
             });
         }
 
@@ -1178,99 +1416,76 @@ namespace Axon
         }
     }
 
-#if NETSTANDARD
     public class EntanglementProtocolBufferWriter : AProtocolWriter
     {
-        public MemoryStream MemoryStream { get; }
-        private int Position { get; set; }
+        public WriterStats Stats { get; } = new WriterStats();
 
-        public EntanglementProtocolBufferWriter(MemoryStream memoryStream)
+        private Entanglement.BinaryWriter Writer = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
+
+        public ReadOnlySpan<byte> Span
         {
-            this.MemoryStream = memoryStream;
-            this.Position = 0;
+            get => this.Writer.Span;
         }
 
-        public byte[] ToArray()
+        public EntanglementProtocolBufferWriter()
         {
-            if (!this.MemoryStream.TryGetBuffer(out var bufferSegment))
-                throw new Exception("Could not resolve buffer");
-
-            return bufferSegment.Array;
         }
 
         public override void WriteStringValue(string value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.StringWrites++;
 
-            var length = Encoding.UTF8.GetBytes(value, buffer[(this.Position + 4)..]);
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], length))
-                throw new Exception("Invalid buffer write");
-            this.Position += length + 4;
+            var encoded = Encoding.UTF8.GetBytes(value);
+            this.Writer.Write(encoded.Length);
+            this.Writer.Write(encoded.AsSpan());
         }
         public override void WriteBooleanValue(bool value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.BooleanWrites++;
 
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], value))
-                throw new Exception("Invalid buffer write");
-            this.Position += 1;
+            this.Writer.Write(value);
         }
         public override void WriteByteValue(byte value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.ByteWrites++;
 
-            buffer[this.Position] = value;
-            this.Position += 1;
+            this.Writer.Write(value);
         }
         public override void WriteShortValue(short value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.ShortWrites++;
 
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], value))
-                throw new Exception("Invalid buffer write");
-            this.Position += 2;
+            this.Writer.Write(value);
         }
         public override void WriteIntegerValue(int value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.IntegerWrites++;
 
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], value))
-                throw new Exception("Invalid buffer write");
-            this.Position += 4;
+            this.Writer.Write(value);
         }
         public override void WriteLongValue(long value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.LongWrites++;
 
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], value))
-                throw new Exception("Invalid buffer write");
-            this.Position += 8;
+            this.Writer.Write(value);
         }
-        public override unsafe void WriteFloatValue(float value)
+        public override void WriteFloatValue(float value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.FloatWrites++;
 
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], value))
-                throw new Exception("Invalid buffer write");
-            this.Position += 4;
+            this.Writer.Write(value);
         }
-        public override unsafe void WriteDoubleValue(double value)
+        public override void WriteDoubleValue(double value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.DoubleWrites++;
 
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], value))
-                throw new Exception("Invalid buffer write");
-            this.Position += 8;
+            this.Writer.Write(value);
         }
         public override void WriteEnumValue<T>(T value)
         {
-            var buffer = this.MemoryStream.GetBuffer().AsSpan();
+            this.Stats.EnumWrites++;
 
-            var enumValue = value.ToInt32(System.Globalization.CultureInfo.InvariantCulture);
-
-            if (!BitConverter.TryWriteBytes(buffer[this.Position..], enumValue))
-                throw new Exception("Invalid buffer write");
-            this.Position += 4;
+            this.Writer.Write(value.ToInt32(System.Globalization.CultureInfo.InvariantCulture));
         }
         public override void WriteIndeterminateValue(object value)
         {
@@ -1379,6 +1594,14 @@ namespace Axon
         public Memory<byte> Buffer { get; }
         private int Position { get; set; }
 
+        private Entanglement.BinaryReader Reader
+        {
+            get
+            {
+                return new Entanglement.BinaryReader(this.Buffer.Span[this.Position..]);
+            }
+        }
+
         public EntanglementProtocolBufferReader(Memory<byte> buffer)
         {
             this.Buffer = buffer;
@@ -1387,7 +1610,7 @@ namespace Axon
 
         public override string ReadStringValue()
         {
-            var length = BitConverter.ToInt32(this.Buffer.Span[this.Position..]);
+            var length = this.Reader.Read<int>();
             this.Position += 4;
 
             string content;
@@ -1398,62 +1621,106 @@ namespace Axon
             this.Position += length;
 
             return content;
+
+            //var length = BitConverter.ToInt32(this.Buffer.Span[this.Position..]);
+            //this.Position += 4;
+
+            //string content;
+            //if (length > 0)
+            //    content = Encoding.UTF8.GetString(this.Buffer.Span.Slice(this.Position, length));
+            //else
+            //    content = string.Empty;
+            //this.Position += length;
+
+            //return content;
         }
         public override bool ReadBooleanValue()
         {
-            var value = BitConverter.ToBoolean(this.Buffer.Span[this.Position..]);
+            var value = this.Reader.Read<bool>();
             this.Position += 1;
-
             return value;
+
+            //var value = BitConverter.ToBoolean(this.Buffer.Span[this.Position..]);
+            //this.Position += 1;
+
+            //return value;
         }
         public override byte ReadByteValue()
         {
-            var value = this.Buffer.Span[this.Position];
+            var value = this.Reader.Read<byte>();
             this.Position += 1;
-
             return value;
+
+            //var value = this.Buffer.Span[this.Position];
+            //this.Position += 1;
+
+            //return value;
         }
         public override short ReadShortValue()
         {
-            var value = BitConverter.ToInt16(this.Buffer.Span[this.Position..]);
+            var value = this.Reader.Read<short>();
             this.Position += 2;
-
             return value;
+
+            //var value = BitConverter.ToInt16(this.Buffer.Span[this.Position..]);
+            //this.Position += 2;
+
+            //return value;
         }
         public override int ReadIntegerValue()
         {
-            var value = BitConverter.ToInt32(this.Buffer.Span[this.Position..]);
+            var value = this.Reader.Read<int>();
             this.Position += 4;
-
             return value;
+
+            //var value = BitConverter.ToInt32(this.Buffer.Span[this.Position..]);
+            //this.Position += 4;
+
+            //return value;
         }
         public override long ReadLongValue()
         {
-            var value = BitConverter.ToInt64(this.Buffer.Span[this.Position..]);
+            var value = this.Reader.Read<long>();
             this.Position += 8;
-
             return value;
+
+            //var value = BitConverter.ToInt64(this.Buffer.Span[this.Position..]);
+            //this.Position += 8;
+
+            //return value;
         }
         public override float ReadFloatValue()
         {
-            var value = BitConverter.ToSingle(this.Buffer.Span[this.Position..]);
+            var value = this.Reader.Read<float>();
             this.Position += 4;
-
             return value;
+
+            //var value = BitConverter.ToSingle(this.Buffer.Span[this.Position..]);
+            //this.Position += 4;
+
+            //return value;
         }
         public override double ReadDoubleValue()
         {
-            var value = BitConverter.ToDouble(this.Buffer.Span[this.Position..]);
+            var value = this.Reader.Read<double>();
             this.Position += 8;
-
             return value;
+
+            //var value = BitConverter.ToDouble(this.Buffer.Span[this.Position..]);
+            //this.Position += 8;
+
+            //return value;
         }
         public override T ReadEnumValue<T>()
         {
-            var enumValue = BitConverter.ToInt32(this.Buffer.Span[this.Position..]);
+            var value = (T)Enum.ToObject(typeof(T), this.Reader.Read<int>());
             this.Position += 4;
+            return value;
 
-            return (T)Enum.ToObject(typeof(T), enumValue);
+            //var enumValue = BitConverter.ToInt32(this.Buffer.Span[this.Position..]);
+            //this.Position += 4;
+
+            //return (T)Enum.ToObject(typeof(T), enumValue);
         }
         public override object ReadIndeterminateValue()
         {
@@ -1578,7 +1845,6 @@ namespace Axon
         {
         }
     }
-#endif
 }
 
 internal static class ByteHelpers
@@ -1590,5 +1856,234 @@ internal static class ByteHelpers
             value += String.Format("{0:X2} ", byt);
 
         return value;
+    }
+}
+
+namespace Axon.Entanglement
+{
+    // Sourced from https://github.com/Sergio0694/BinaryPack/tree/master/src/BinaryPack/Serialization/Buffers
+
+    using System;
+    using System.Buffers;
+    using System.Runtime.CompilerServices;
+    using System.Runtime.InteropServices;
+    using System.Diagnostics.Contracts;
+
+    internal ref struct BinaryReader
+    {
+        /// <summary>
+        /// The <see cref="Span{T}"/> current in use
+        /// </summary>
+        private readonly Span<byte> Buffer;
+
+        /// <summary>
+        /// The current position into <see cref="Buffer"/>
+        /// </summary>
+        private int _Position;
+
+        /// <summary>
+        /// Creates a new <see cref="BinaryReader"/> instance with the given parameters
+        /// </summary>
+        /// <param name="buffer">The source<see cref="Span{T}"/> to read data from</param>
+        public BinaryReader(Span<byte> buffer)
+        {
+            Buffer = buffer;
+            _Position = 0;
+        }
+
+        /// <summary>
+        /// Reads a value of type <typeparamref name="T"/> from the underlying buffer
+        /// </summary>
+        /// <typeparam name="T">The type of value to read from the buffer</typeparam>
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Read<T>() where T : unmanaged
+        {
+            /* The reasons for declaring this struct as a ref struct, and for
+             * carrying a Span<byte> instead of a byte[] array are that this way
+             * the reader can also read data from memory areas that are now owned
+             * by the caller, or data that is just a slice on another array.
+             * These variable declarations are just for clarity, they are
+             * all optimized away bit the JIT compiler anyway. */
+            ref byte r0 = ref Buffer[_Position];
+            T value = Unsafe.As<byte, T>(ref r0);
+            _Position += Unsafe.SizeOf<T>();
+
+            return value;
+        }
+
+        /// <summary>
+        /// Reads a sequence of elements of type <typeparamref name="T"/> from the underlying buffer
+        /// </summary>
+        /// <typeparam name="T">The type of elements to read from the buffer</typeparam>
+        /// <param name="span">The target <see cref="Span{T}"/> to write the read elements to</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Read<T>(Span<T> span) where T : unmanaged
+        {
+            /* This method is only invoked by the internal deserializers,
+             * which already perform bounds check before creating the target Span<T>.
+             * Since the input Span<T> is guaranteed to never be empty,
+             * we can use GetPinnableReference() instead of the this[int]
+             * indexer and skip one extra conditional jump in the JITted code. */
+            int size = Unsafe.SizeOf<T>() * span.Length;
+            ref T r0 = ref span.GetPinnableReference();
+            ref byte r1 = ref Unsafe.As<T, byte>(ref r0);
+            Span<byte> destination = MemoryMarshal.CreateSpan(ref r1, size);
+            Span<byte> source = Buffer.Slice(_Position, size);
+
+            source.CopyTo(destination);
+            _Position += size;
+        }
+    }
+
+    /// <summary>
+    /// A <see langword="struct"/> that provides a fast implementation of a binary writer, leveraging <see cref="ArrayPool{T}"/> for memory pooling
+    /// </summary>
+    internal struct BinaryWriter
+    {
+        /// <summary>
+        /// The default size to use to create new <see cref="BinaryWriter"/> instances
+        /// </summary>
+        public const int DefaultSize = 1024;
+
+        /// <summary>
+        /// The <see cref="byte"/> array current in use
+        /// </summary>
+        private byte[] _Buffer;
+
+        /// <summary>
+        /// The current position into <see cref="_Buffer"/>
+        /// </summary>
+        private int _Position;
+
+        /// <summary>
+        /// Creates a new <see cref="BinaryWriter"/> instance with the given parameters
+        /// </summary>
+        /// <param name="initialSize">The initial size of the internal buffer</param>
+        public BinaryWriter(int initialSize)
+        {
+            _Buffer = ArrayPool<byte>.Shared.Rent(initialSize);
+            _Position = 0;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ReadOnlySpan{T}"/> instance mapping the used content of the underlying buffer
+        /// </summary>
+        public ReadOnlySpan<byte> Span
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new ReadOnlySpan<byte>(_Buffer, 0, _Position);
+        }
+
+        /// <summary>
+        /// Writes a value of type <typeparamref name="T"/> to the underlying buffer
+        /// </summary>
+        /// <typeparam name="T">The type of value to write to the buffer</typeparam>
+        /// <param name="value">The <typeparamref name="T"/> value to write to the buffer</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write<T>(T value) where T : unmanaged
+        {
+            int size = Unsafe.SizeOf<T>();
+
+            EnsureCapacity(size);
+
+            Unsafe.As<byte, T>(ref _Buffer[_Position]) = value;
+            _Position += size;
+        }
+
+        /// <summary>
+        /// Writes the contents of the input <see cref="Span{T}"/> instance to the underlying buffer
+        /// </summary>
+        /// <typeparam name="T">The type of values to write to the buffer</typeparam>
+        /// <param name="span">The input <see cref="Span{T}"/> value to write to the buffer</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write<T>(Span<T> span) where T : unmanaged
+        {
+            int
+                elementSize = Unsafe.SizeOf<T>(),
+                totalSize = elementSize * span.Length;
+
+            EnsureCapacity(totalSize);
+
+            ref T r0 = ref span.GetPinnableReference();
+            ref byte r1 = ref Unsafe.As<T, byte>(ref r0);
+
+            MemoryMarshal.CreateSpan(ref r1, totalSize).CopyTo(_Buffer.AsSpan(_Position, totalSize));
+            _Position += totalSize;
+        }
+
+        /// <summary>
+        /// Ensures the buffer in use has the capacity to contain the specified amount of new data
+        /// </summary>
+        /// <param name="count">The size in bytes of the new data to insert into the buffer</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EnsureCapacity(int count)
+        {
+            int
+                currentLength = _Buffer.Length,
+                requiredLength = _Position + count;
+
+            if (requiredLength <= currentLength) return;
+
+            if (currentLength == 0x7FFFFFC7) throw new InvalidOperationException("Maximum size for a byte[] array exceeded (0x7FFFFFC7), see: https://msdn.microsoft.com/en-us/library/system.array");
+
+            // Calculate the new size of the target array
+            int targetLength = requiredLength.UpperBoundLog2();
+            if (targetLength < 0) targetLength = 0x7FFFFFC7;
+
+            // Rent the new array and copy the content of the current array
+            byte[] rent = ArrayPool<byte>.Shared.Rent(targetLength);
+            Unsafe.CopyBlock(ref rent[0], ref _Buffer[0], (uint)_Position);
+
+            // Return the old buffer and swap it
+            ArrayPool<byte>.Shared.Return(_Buffer);
+            _Buffer = rent;
+        }
+
+        /// <summary>
+        /// Disposes the current instance, like <see cref="IDisposable.Dispose"/>
+        /// </summary>
+        public void Dispose() => ArrayPool<byte>.Shared.Return(_Buffer);
+    }
+
+    /// <summary>
+    /// A <see langword="class"/> that provides extension methods for numeric types
+    /// </summary>
+    internal static class NumericExtensions
+    {
+        /// <summary>
+        /// C# no-alloc optimization that maps to the data section, see <see href="https://github.com/dotnet/roslyn/pull/24621"/>
+        /// </summary>
+        private static ReadOnlySpan<byte> Log2DeBruijn => new byte[]
+        {
+            00, 09, 01, 10, 13, 21, 02, 29,
+            11, 14, 16, 18, 22, 25, 03, 30,
+            08, 12, 20, 28, 15, 17, 24, 07,
+            19, 27, 23, 06, 26, 05, 04, 31
+        };
+
+        /// <summary>
+        /// Calculates the upper bound of the log base 2 of the input value
+        /// </summary>
+        /// <param name="n">The input value to compute the bound for</param>
+        /// <remarks>Main body pulled from <see href="https://source.dot.net/#System.Private.CoreLib/shared/System/Numerics/BitOperations.cs"/></remarks>
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int UpperBoundLog2(this int n)
+        {
+            uint value = (uint)n - 1;
+
+            // Fill trailing zeros with ones, eg 00010010 becomes 00011111
+            value |= value >> 01;
+            value |= value >> 02;
+            value |= value >> 04;
+            value |= value >> 08;
+            value |= value >> 16;
+
+            // Compute the log2 and adjust for the upper bound
+            return 1 << (Unsafe.AddByteOffset(
+                ref MemoryMarshal.GetReference(Log2DeBruijn),
+                (IntPtr)(int)((value * 0x07C4ACDDu) >> 27)) + 1);
+        }
     }
 }
