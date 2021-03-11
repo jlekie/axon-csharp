@@ -285,6 +285,11 @@ namespace Axon
             this.DecoderStream = new BinaryReader(buffer);
         }
 
+        public override Span<byte> ReadData()
+        {
+            throw new NotImplementedException();
+        }
+
         public override string ReadStringValue()
         {
             return this.DecoderStream.ReadString();
@@ -459,6 +464,11 @@ namespace Axon
         public BinaryProtocolWriter(Stream buffer)
         {
             this.EncoderStream = new BinaryWriter(buffer);
+        }
+
+        public override void WriteData(Span<byte> data)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteStringValue(string value)

@@ -275,6 +275,11 @@ namespace Axon
             this.EncoderStream = XmlWriter.Create(buffer);
         }
 
+        public override void WriteData(Span<byte> data)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteStringValue(string value)
         {
             this.EncoderStream.WriteValue(value);
@@ -442,6 +447,11 @@ namespace Axon
         public XmlProtocolReader(Stream buffer)
         {
             this.DecoderStream = XmlReader.Create(buffer);
+        }
+
+        public override Span<byte> ReadData()
+        {
+            throw new NotImplementedException();
         }
 
         public override string ReadStringValue()

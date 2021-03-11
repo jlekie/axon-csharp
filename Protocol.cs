@@ -67,6 +67,8 @@ namespace Axon
 
     public interface IProtocolReader
     {
+        Span<byte> ReadData();
+
         string ReadStringValue();
         bool ReadBooleanValue();
         byte ReadByteValue();
@@ -114,6 +116,8 @@ namespace Axon
 
     public abstract class AProtocolReader : IProtocolReader
     {
+        public abstract Span<byte> ReadData();
+
         public abstract string ReadStringValue();
         public abstract bool ReadBooleanValue();
         public abstract byte ReadByteValue();
@@ -236,6 +240,8 @@ namespace Axon
 
     public interface IProtocolWriter
     {
+        void WriteData(Span<byte> data);
+
         void WriteStringValue(string value);
         void WriteBooleanValue(bool value);
         void WriteByteValue(byte value);
@@ -327,7 +333,7 @@ namespace Axon
 
     public abstract class AProtocolWriter : IProtocolWriter
     {
-        // public abstract Task WriteData(Action<IProtocolWriter> handler);
+        public abstract void WriteData(Span<byte> data);
 
         public abstract void WriteStringValue(string value);
         public abstract void WriteBooleanValue(bool value);

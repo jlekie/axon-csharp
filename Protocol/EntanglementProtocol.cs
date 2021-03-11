@@ -995,6 +995,11 @@ namespace Axon
 #endif
         }
 
+        public override void WriteData(Span<byte> data)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteStringValue(string value)
         {
             this.Stats.StringWrites++;
@@ -1224,6 +1229,11 @@ namespace Axon
 #endif
         }
 
+        public override Span<byte> ReadData()
+        {
+            throw new NotImplementedException();
+        }
+
         public override string ReadStringValue()
         {
             this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
@@ -1431,6 +1441,12 @@ namespace Axon
         {
         }
 
+        public override void WriteData(Span<byte> data)
+        {
+            this.Writer.Write(data.Length);
+            this.Writer.Write(data);
+        }
+
         public override void WriteStringValue(string value)
         {
             this.Stats.StringWrites++;
@@ -1606,6 +1622,17 @@ namespace Axon
         {
             this.Buffer = buffer;
             this.Position = 0;
+        }
+
+        public override Span<byte> ReadData()
+        {
+            var length = this.Reader.Read<int>();
+            this.Position += 4;
+
+            var data = this.Buffer.Span.Slice(this.Position, length);
+            this.Position += length;
+
+            return data;
         }
 
         public override string ReadStringValue()
