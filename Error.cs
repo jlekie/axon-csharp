@@ -63,6 +63,15 @@ namespace Axon
             }
         }
 
+        public void SlipstreamWrite(Axon.IProtocolWriter writer)
+        {
+            writer.WriteStringValue(this.Message);
+        }
+        public void SlipstreamRead(Axon.IProtocolReader reader)
+        {
+            this.Message = reader.ReadStringValue();
+        }
+
         public Exception ToException()
         {
             return new Exception(this.Message);
