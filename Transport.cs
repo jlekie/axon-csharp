@@ -671,6 +671,15 @@ namespace Axon
     {
         public abstract bool IsListening { get; }
 
+        public AServerTransport()
+            : base()
+        {
+        }
+        public AServerTransport(string identity)
+            : base(identity)
+        {
+        }
+
         public abstract Task Listen();
 
         public abstract Task Close();
@@ -679,6 +688,15 @@ namespace Axon
     public abstract class AClientTransport : ATransport, IClientTransport
     {
         public abstract bool IsConnected { get; }
+
+        public AClientTransport()
+            : base()
+        {
+        }
+        public AClientTransport(string identity)
+            : base(identity)
+        {
+        }
 
         public abstract Task Connect();
         public abstract Task Connect(CancellationToken cancellationToken);

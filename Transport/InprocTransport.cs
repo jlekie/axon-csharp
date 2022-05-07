@@ -25,7 +25,9 @@ namespace Axon
 
         protected virtual void OnMessageEnqueued(TransportMessage message)
         {
-            this.MessageEnqueued?.Invoke(this, new MessageEnqueuedEventArgs(message));
+            //this.MessageEnqueued?.Invoke(this, new MessageEnqueuedEventArgs(message));
+            Task.Run(() => this.MessageEnqueued?.Invoke(this, new MessageEnqueuedEventArgs(message)));
+            //Console.WriteLine($"MessageStream.OnMessageEnqueued[POST]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
         }
     }
 
@@ -146,7 +148,9 @@ namespace Axon
         {
             var receiveBuffer = this.Buffer.GetOrAdd(key, (_) => new BlockingCollection<TransportMessage>());
 
+            //Console.WriteLine($"TaggedTransportMessageBuffer[{this.Identifier}].GetNextMessage.Take[PRE]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
             var data = receiveBuffer.Take(cancellationToken);
+            //Console.WriteLine($"TaggedTransportMessageBuffer[{this.Identifier}].GetNextMessage.Take[POST]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
 
             if (receiveBuffer.Count < 1)
                 this.Buffer.TryRemove(key, out _);
@@ -287,7 +291,7 @@ namespace Axon
         } 
 
         public MessageStream ReceiveStream { get; } = new MessageStream();
-        private TransportMessageBuffer MessageBuffer { get; } = new TransportMessageBuffer();
+        private TransportMessageBuffer MessageBuffer { get; }
 
         private ConcurrentDictionary<string, InprocClientTransport> RegisteredClients { get; } = new ConcurrentDictionary<string, InprocClientTransport>();
 
@@ -296,6 +300,15 @@ namespace Axon
         public InprocServerTransport()
             : base()
         {
+            this.MessageBuffer = new TransportMessageBuffer(this.Identity);
+
+            this.ReceiveStream.MessageEnqueued += this.ReceiveBufferMessageEnqueued;
+        }
+        public InprocServerTransport(string identity)
+            : base(identity)
+        {
+            this.MessageBuffer = new TransportMessageBuffer(this.Identity);
+
             this.ReceiveStream.MessageEnqueued += this.ReceiveBufferMessageEnqueued;
         }
 
@@ -318,7 +331,7 @@ namespace Axon
 
         public override async Task<TransportMessage> Receive()
         {
-            var message = this.MessageBuffer.GetNextMessage();
+            var message = await Task.Factory.StartNew(() => this.MessageBuffer.GetNextMessage(), TaskCreationOptions.LongRunning);
 
             this.OnMessageReceived(message);
 
@@ -326,7 +339,7 @@ namespace Axon
         }
         public override async Task<TransportMessage> Receive(CancellationToken cancellationToken)
         {
-            var message = this.MessageBuffer.GetNextMessage(cancellationToken);
+            var message = await Task.Factory.StartNew(() => this.MessageBuffer.GetNextMessage(cancellationToken), TaskCreationOptions.LongRunning);
 
             this.OnMessageReceived(message);
 
@@ -391,7 +404,9 @@ namespace Axon
             if (!this.RegisteredClients.TryGetValue(clientIdentity, out var inprocClient))
                 throw new Exception($"Registered client not found [{clientIdentity}]");
 
+            //Console.WriteLine($"InprocServerTransport[{this.Identity}].Send.EnqueueMessage[PRE]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
             inprocClient.ReceiveStream.EnqueueMessage(forwardedMessage);
+            //Console.WriteLine($"InprocServerTransport[{this.Identity}].Send.EnqueueMessage[POST]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
 
             this.OnMessageSent(forwardedMessage);
         }
@@ -463,10 +478,14 @@ namespace Axon
 
         private void ReceiveBufferMessageEnqueued(object sender, MessageEnqueuedEventArgs e)
         {
+            //Console.WriteLine($"InprocServerTransport[{this.Identity}].ReceiveBufferMessageEnqueued[PRE]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+
             this.OnMessageReceiving(e.Message);
 
             var forwardedMessage = TransportMessage.FromMessage(e.Message);
             this.MessageBuffer.QueueMessage(forwardedMessage);
+
+            //Console.WriteLine($"InprocServerTransport[{this.Identity}].ReceiveBufferMessageEnqueued[POST]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
         }
     }
 
@@ -480,13 +499,32 @@ namespace Axon
         public InprocServerTransport ServerTransport { get; }
 
         public MessageStream ReceiveStream { get; } = new MessageStream();
-        private TransportMessageBuffer MessageBuffer { get; } = new TransportMessageBuffer();
-        private TaggedTransportMessageBuffer TaggedMessageBuffer { get; } = new TaggedTransportMessageBuffer();
+        private TransportMessageBuffer MessageBuffer { get; }
+        private TaggedTransportMessageBuffer TaggedMessageBuffer { get; }
         
         internal InprocClientTransport(InprocServerTransport serverTransport)
             : base()
         {
             this.ServerTransport = serverTransport;
+
+            this.MessageBuffer = new TransportMessageBuffer(this.Identity);
+            this.TaggedMessageBuffer = new TaggedTransportMessageBuffer(this.Identity);
+
+            this.ReceiveStream.MessageEnqueued += this.ReceiveBufferMessageEnqueued;
+            //this.TaggedReceiveBuffer.MessageEnqueued += this.TaggedReceiveBufferMessageEnqueued;
+
+            //this.ReceiveBuffer = new TransportMessageBuffer();
+            //this.SendBuffer = new TransportMessageBuffer();
+            //this.TaggedReceiveBuffer = new TaggedTransportMessageBuffer();
+            //this.TaggedSendBuffer = new TaggedTransportMessageBuffer();
+        }
+        internal InprocClientTransport(string identity, InprocServerTransport serverTransport)
+            : base(identity)
+        {
+            this.ServerTransport = serverTransport;
+
+            this.MessageBuffer = new TransportMessageBuffer(this.Identity);
+            this.TaggedMessageBuffer = new TaggedTransportMessageBuffer(this.Identity);
 
             this.ReceiveStream.MessageEnqueued += this.ReceiveBufferMessageEnqueued;
             //this.TaggedReceiveBuffer.MessageEnqueued += this.TaggedReceiveBufferMessageEnqueued;
@@ -553,14 +591,16 @@ namespace Axon
             forwardedMessage.Metadata.Add($"clientIdentity[{this.ServerTransport.Identity}]", Encoding.UTF8.GetBytes(this.Identity));
             forwardedMessage.Metadata.Add($"mid[{this.Identity}]", Encoding.UTF8.GetBytes(messageId));
 
+            //Console.WriteLine($"InprocClientTransport[{this.Identity}][{messageId}].Send.EnqueueMessage[PRE]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
             this.ServerTransport.ReceiveStream.EnqueueMessage(forwardedMessage);
+            //Console.WriteLine($"InprocClientTransport[{this.Identity}][{messageId}].Send.EnqueueMessage[POST]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
 
             this.OnMessageSent(forwardedMessage);
         }
 
         public override async Task<TransportMessage> Receive()
         {
-            var message = this.MessageBuffer.GetNextMessage();
+            var message = await Task.Factory.StartNew(() => this.MessageBuffer.GetNextMessage(), TaskCreationOptions.LongRunning);
 
             this.OnMessageReceived(message);
 
@@ -568,7 +608,7 @@ namespace Axon
         }
         public override async Task<TransportMessage> Receive(CancellationToken cancellationToken)
         {
-            var message = this.MessageBuffer.GetNextMessage(cancellationToken);
+            var message = await Task.Factory.StartNew(() => this.MessageBuffer.GetNextMessage(cancellationToken), TaskCreationOptions.LongRunning);
 
             this.OnMessageReceived(message);
 
@@ -576,7 +616,7 @@ namespace Axon
         }
         public override async Task<TransportMessage> Receive(string messageId)
         {
-            var message = this.TaggedMessageBuffer.GetNextMessage(messageId);
+            var message = await Task.Factory.StartNew(() => this.TaggedMessageBuffer.GetNextMessage(messageId), TaskCreationOptions.LongRunning);
 
             this.OnMessageReceived(message);
 
@@ -584,7 +624,7 @@ namespace Axon
         }
         public override async Task<TransportMessage> Receive(string messageId, CancellationToken cancellationToken)
         {
-            var message = this.TaggedMessageBuffer.GetNextMessage(messageId, cancellationToken);
+            var message = await Task.Factory.StartNew(() => this.TaggedMessageBuffer.GetNextMessage(messageId, cancellationToken), TaskCreationOptions.LongRunning);
 
             this.OnMessageReceived(message);
 
@@ -611,6 +651,8 @@ namespace Axon
 
         private void ReceiveBufferMessageEnqueued(object sender, MessageEnqueuedEventArgs e)
         {
+            //Console.WriteLine($"InprocClientTransport[{this.Identity}].ReceiveBufferMessageEnqueued[PRE]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+
             this.OnMessageReceiving(e.Message);
 
             var forwardedMessage = TransportMessage.FromMessage(e.Message);
@@ -623,6 +665,8 @@ namespace Axon
             {
                 this.MessageBuffer.QueueMessage(forwardedMessage);
             }
+
+            //Console.WriteLine($"InprocClientTransport[{this.Identity}].ReceiveBufferMessageEnqueued[POST]: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
         }
     }
 
