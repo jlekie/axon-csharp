@@ -1,15 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1</TargetFrameworks> 
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <SignAssembly>true</SignAssembly> 
     <AssemblyOriginatorKeyFile>Axon.Common.snk</AssemblyOriginatorKeyFile> 
     <DelaySign>false</DelaySign> 
+    <PackageId>JLekie.Axon.Common</PackageId>
     <Version>1.0.0-alpha.1</Version> 
     <Description>Axon - Common Runtime</Description> 
     <Authors>Joe Lekie</Authors> 
     <Company>Axon</Company> 
     <PackageTags>Axon RPC</PackageTags>
+    <RepositoryUrl>https://github.com/jlekie/axon-csharp</RepositoryUrl>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="alchemy\" />
@@ -29,3 +32,4 @@
     </PackageReference>
   </ItemGroup>
 </Project>
+
