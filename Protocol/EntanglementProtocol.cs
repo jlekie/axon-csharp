@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Threading;
 
 using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace Axon
 {
@@ -1428,7 +1429,7 @@ namespace Axon
 
     public class EntanglementProtocolBufferWriter : AProtocolWriter
     {
-        public WriterStats Stats { get; } = new WriterStats();
+        //public WriterStats Stats { get; } = new WriterStats();
 
         private Entanglement.BinaryWriter Writer = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
 
@@ -1449,57 +1450,67 @@ namespace Axon
 
         public override void WriteStringValue(string value)
         {
-            this.Stats.StringWrites++;
+            //this.Stats.StringWrites++;
 
-            var encoded = Encoding.UTF8.GetBytes(value);
-            this.Writer.Write(encoded.Length);
-            this.Writer.Write(encoded.AsSpan());
+            int length = Encoding.UTF8.GetByteCount(value);
+
+            this.Writer.Write(length);
+
+            this.Writer.EnsureCapacity(length);
+            if (!MemoryMarshal.TryGetArray(this.Writer.Memory.Slice(this.Writer.Position, length), out ArraySegment<byte> segment))
+                throw new Exception("Could not aquire memory segment for string encoding.");
+            Encoding.UTF8.GetBytes(value, 0, value.Length, segment.Array, segment.Offset);
+            this.Writer.Advance(length);
+
+            //var encoded = Encoding.UTF8.GetBytes(value);
+            //this.Writer.Write(encoded.Length);
+            //this.Writer.Write(encoded.AsSpan());
         }
         public override void WriteBooleanValue(bool value)
         {
-            this.Stats.BooleanWrites++;
+            //this.Stats.BooleanWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteByteValue(byte value)
         {
-            this.Stats.ByteWrites++;
+            //this.Stats.ByteWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteShortValue(short value)
         {
-            this.Stats.ShortWrites++;
+            //this.Stats.ShortWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteIntegerValue(int value)
         {
-            this.Stats.IntegerWrites++;
+            //this.Stats.IntegerWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteLongValue(long value)
         {
-            this.Stats.LongWrites++;
+            //this.Stats.LongWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteFloatValue(float value)
         {
-            this.Stats.FloatWrites++;
+            //this.Stats.FloatWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteDoubleValue(double value)
         {
-            this.Stats.DoubleWrites++;
+            //this.Stats.DoubleWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteEnumValue<T>(T value)
         {
-            this.Stats.EnumWrites++;
+            //this.Stats.EnumWrites++;
 
             this.Writer.Write(value.ToInt32(System.Globalization.CultureInfo.InvariantCulture));
         }
@@ -1642,7 +1653,8 @@ namespace Axon
 
             string content;
             if (length > 0)
-                content = Encoding.UTF8.GetString(this.Buffer.Span.Slice(this.Position, length));
+                //content = Encoding.UTF8.GetString(this.Buffer.Span.Slice(this.Position, length));
+                content = String.Create(length, new { Buffer = this.Buffer, Position = this.Position }, (chars, state) => Encoding.UTF8.GetString(state.Buffer.Span.Slice(state.Position, length)).AsSpan().CopyTo(chars));
             else
                 content = string.Empty;
             this.Position += length;
@@ -1993,6 +2005,11 @@ namespace Axon.Entanglement
             _Position = 0;
         }
 
+        public int Position
+        {
+            get => this._Position;
+        }
+
         /// <summary>
         /// Gets a <see cref="ReadOnlySpan{T}"/> instance mapping the used content of the underlying buffer
         /// </summary>
@@ -2000,6 +2017,12 @@ namespace Axon.Entanglement
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => new ReadOnlySpan<byte>(_Buffer, 0, _Position);
+        }
+
+        public Memory<byte> Memory
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new Memory<byte>(_Buffer, 0, _Buffer.Length);
         }
 
         /// <summary>
@@ -2039,12 +2062,18 @@ namespace Axon.Entanglement
             _Position += totalSize;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Advance(int count)
+        {
+            _Position += count;
+        }
+
         /// <summary>
         /// Ensures the buffer in use has the capacity to contain the specified amount of new data
         /// </summary>
         /// <param name="count">The size in bytes of the new data to insert into the buffer</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnsureCapacity(int count)
+        public void EnsureCapacity(int count)
         {
             int
                 currentLength = _Buffer.Length,
