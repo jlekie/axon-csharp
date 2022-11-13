@@ -362,21 +362,23 @@ namespace Axon
     {
         public static TransportMessage FromMessage(TransportMessage source)
         {
-            return new TransportMessage(source.Payload, VolatileTransportMetadata.FromMetadata(source.Metadata));
+            return new TransportMessage(source.Payload, source.ProtocolIdentifier, VolatileTransportMetadata.FromMetadata(source.Metadata));
         }
 
         public readonly byte[] Payload;
-
         public readonly VolatileTransportMetadata Metadata;
+        public readonly string ProtocolIdentifier;
 
-        public TransportMessage(byte[] payload)
+        public TransportMessage(byte[] payload, string protocolIdentifier)
         {
             this.Payload = payload;
+            this.ProtocolIdentifier = protocolIdentifier;
             this.Metadata = new VolatileTransportMetadata();
         }
-        public TransportMessage(byte[] payload, VolatileTransportMetadata metadata)
+        public TransportMessage(byte[] payload, string protocolIdentifier, VolatileTransportMetadata metadata)
         {
             this.Payload = payload;
+            this.ProtocolIdentifier = protocolIdentifier;
             this.Metadata = metadata;
         }
 

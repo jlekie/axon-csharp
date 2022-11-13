@@ -11,24 +11,27 @@ namespace Axon
 {
     public class XmlProtocol : AProtocol
     {
+        public static readonly string IDENTIFIER = "xml";
+        public override string Identifier => IDENTIFIER;
+
         public XmlProtocol() : base()
         {
         }
 
-        public T Read<T>(byte[] data, Func<IProtocolReader, T> handler)
+        public override T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
         {
-            using (var buffer = new MemoryStream(data))
+            using (var buffer = new MemoryStream(data.ToArray()))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 return handler(reader);
             }
         }
-        public byte[] Write(Action<IProtocolWriter> handler)
+        public override Memory<byte> Write(Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new XmlProtocolWriter(buffer);
+                var writer = new XmlProtocolWriter(this, buffer);
                 handler(writer);
 
                 buffer.Position = 0;
@@ -43,26 +46,26 @@ namespace Axon
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new XmlProtocolWriter(buffer);
+                var writer = new XmlProtocolWriter(this, buffer);
                 handler(writer);
 
                 buffer.Position = 0;
 
                 var data = buffer.ToArray();
-                await transport.Send(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                await transport.Send(new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
         }
         public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
             {
-                var writer = new XmlProtocolWriter(buffer);
+                var writer = new XmlProtocolWriter(this, buffer);
                 handler(writer);
 
                 buffer.Position = 0;
 
                 var data = buffer.ToArray();
-                await transport.Send(messageId, new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                await transport.Send(messageId, new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
         }
 
@@ -70,9 +73,12 @@ namespace Axon
         {
             var receivedData = await transport.Receive();
 
+            if (receivedData.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
             using (var buffer = new MemoryStream(receivedData.Payload))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 handler(reader, receivedData.Metadata);
             }
@@ -81,9 +87,12 @@ namespace Axon
         {
             var receivedData = await transport.Receive();
 
+            if (receivedData.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
             using (var buffer = new MemoryStream(receivedData.Payload))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 return handler(reader, receivedData.Metadata);
             }
@@ -92,9 +101,12 @@ namespace Axon
         {
             var receivedData = await transport.Receive(messageId);
 
+            if (receivedData.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
             using (var buffer = new MemoryStream(receivedData.Payload))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 handler(reader, receivedData.Metadata);
             }
@@ -103,9 +115,12 @@ namespace Axon
         {
             var receivedData = await transport.Receive(messageId);
 
+            if (receivedData.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
             using (var buffer = new MemoryStream(receivedData.Payload))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 return handler(reader, receivedData.Metadata);
             }
@@ -115,9 +130,12 @@ namespace Axon
         {
             var receivedData = await transport.ReceiveTagged();
 
+            if (receivedData.Message.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.Message.ProtocolIdentifier}]");
+
             using (var buffer = new MemoryStream(receivedData.Message.Payload))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 handler(reader, receivedData.Id, receivedData.Message.Metadata);
             }
@@ -126,9 +144,12 @@ namespace Axon
         {
             var receivedData = await transport.ReceiveTagged();
 
+            if (receivedData.Message.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.Message.ProtocolIdentifier}]");
+
             using (var buffer = new MemoryStream(receivedData.Message.Payload))
             {
-                var reader = new XmlProtocolReader(buffer);
+                var reader = new XmlProtocolReader(this, buffer);
 
                 return handler(reader, receivedData.Id, receivedData.Message.Metadata);
             }
@@ -139,22 +160,25 @@ namespace Axon
             Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
-                var writer = new XmlProtocolWriter(buffer);
+                var writer = new XmlProtocolWriter(this, buffer);
                 handler(writer);
 
                 buffer.Position = 0;
 
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) =>
             {
                 var receivedData = await receiveHandler();
 
+                if (receivedData.ProtocolIdentifier != this.Identifier)
+                    throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
                 using (var buffer = new MemoryStream(receivedData.Payload))
                 {
-                    var reader = new XmlProtocolReader(buffer);
+                    var reader = new XmlProtocolReader(this, buffer);
 
                     readHandler(reader, receivedData.Metadata);
                 }
@@ -165,22 +189,25 @@ namespace Axon
             Func<Task<TransportMessage>> receiveHandler;
             using (var buffer = new MemoryStream())
             {
-                var writer = new XmlProtocolWriter(buffer);
+                var writer = new XmlProtocolWriter(this, buffer);
                 handler(writer);
 
                 buffer.Position = 0;
 
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) =>
             {
                 var receivedData = await receiveHandler();
 
+                if (receivedData.ProtocolIdentifier != this.Identifier)
+                    throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
                 using (var buffer = new MemoryStream(receivedData.Payload))
                 {
-                    var reader = new XmlProtocolReader(buffer);
+                    var reader = new XmlProtocolReader(this, buffer);
 
                     return readHandler(reader, receivedData.Metadata);
                 }
@@ -270,7 +297,8 @@ namespace Axon
     {
         public XmlWriter EncoderStream { get; private set; }
 
-        public XmlProtocolWriter(Stream buffer)
+        public XmlProtocolWriter(AProtocol protocol, Stream buffer)
+            : base(protocol)
         {
             this.EncoderStream = XmlWriter.Create(buffer);
         }
@@ -444,7 +472,8 @@ namespace Axon
     {
         public XmlReader DecoderStream { get; private set; }
 
-        public XmlProtocolReader(Stream buffer)
+        public XmlProtocolReader(AProtocol protocol, Stream buffer)
+            : base(protocol)
         {
             this.DecoderStream = XmlReader.Create(buffer);
         }

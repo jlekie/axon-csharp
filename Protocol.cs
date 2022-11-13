@@ -7,6 +7,11 @@ namespace Axon
 {
     public interface IProtocol
     {
+        string Identifier { get; }
+
+        T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler);
+        Memory<byte> Write(Action<IProtocolWriter> handler);
+
         Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
         Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
         Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
@@ -37,6 +42,11 @@ namespace Axon
 
     public abstract class AProtocol : IProtocol
     {
+        public abstract string Identifier { get; }
+
+        public abstract T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler);
+        public abstract Memory<byte> Write(Action<IProtocolWriter> handler);
+
         public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
         public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
         public abstract Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
@@ -67,6 +77,8 @@ namespace Axon
 
     public interface IProtocolReader
     {
+        IProtocol Protocol { get; }
+
         Span<byte> ReadData();
 
         string ReadStringValue();
@@ -116,6 +128,14 @@ namespace Axon
 
     public abstract class AProtocolReader : IProtocolReader
     {
+        public AProtocol Protocol { get; }
+        IProtocol IProtocolReader.Protocol => this.Protocol;
+
+        public AProtocolReader(AProtocol protocol)
+        {
+            this.Protocol = protocol;
+        }
+
         public abstract Span<byte> ReadData();
 
         public abstract string ReadStringValue();
@@ -240,6 +260,8 @@ namespace Axon
 
     public interface IProtocolWriter
     {
+        IProtocol Protocol { get; }
+
         void WriteData(Span<byte> data);
 
         void WriteStringValue(string value);
@@ -333,6 +355,14 @@ namespace Axon
 
     public abstract class AProtocolWriter : IProtocolWriter
     {
+        public AProtocol Protocol { get; }
+        IProtocol IProtocolWriter.Protocol => this.Protocol;
+
+        public AProtocolWriter(AProtocol protocol)
+        {
+            this.Protocol = protocol;
+        }
+
         public abstract void WriteData(Span<byte> data);
 
         public abstract void WriteStringValue(string value);
