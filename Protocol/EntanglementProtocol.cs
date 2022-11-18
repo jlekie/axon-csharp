@@ -1564,7 +1564,7 @@ namespace Axon
 
     public class EntanglementProtocolBufferWriter : AProtocolWriter
     {
-        public WriterStats Stats { get; } = new WriterStats();
+        //public WriterStats Stats { get; } = new WriterStats();
 
         private Dictionary<string, int> Index = new Dictionary<string, int>();
         private Entanglement.BinaryWriter IndexWriter = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
@@ -1590,10 +1590,10 @@ namespace Axon
             //writer.Write(this.Writer.Span.Length);
             writer.Write(this.Writer.Span);
 
-            Console.WriteLine("Index Count: " + this.Index.Count);
-            Console.WriteLine("Index Length: " + this.IndexWriter.Span.Length);
-            Console.WriteLine("Payload Length: " + this.Writer.Span.Length);
-            this.Stats.WriteToConsole();
+            //Console.WriteLine("Index Count: " + this.Index.Count);
+            //Console.WriteLine("Index Length: " + this.IndexWriter.Span.Length);
+            //Console.WriteLine("Payload Length: " + this.Writer.Span.Length);
+            //this.Stats.WriteToConsole();
 
             return writer.Span;
         }
@@ -1606,7 +1606,7 @@ namespace Axon
 
         public override void WriteStringValue(string value)
         {
-            this.Stats.StringWrites++;
+            //this.Stats.StringWrites++;
 
             if (this.Index.TryGetValue(value, out var pos))
             {
@@ -1649,49 +1649,49 @@ namespace Axon
         }
         public override void WriteBooleanValue(bool value)
         {
-            this.Stats.BooleanWrites++;
+            //this.Stats.BooleanWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteByteValue(byte value)
         {
-            this.Stats.ByteWrites++;
+            //this.Stats.ByteWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteShortValue(short value)
         {
-            this.Stats.ShortWrites++;
+            //this.Stats.ShortWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteIntegerValue(int value)
         {
-            this.Stats.IntegerWrites++;
+            //this.Stats.IntegerWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteLongValue(long value)
         {
-            this.Stats.LongWrites++;
+            //this.Stats.LongWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteFloatValue(float value)
         {
-            this.Stats.FloatWrites++;
+            //this.Stats.FloatWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteDoubleValue(double value)
         {
-            this.Stats.DoubleWrites++;
+            //this.Stats.DoubleWrites++;
 
             this.Writer.Write(value);
         }
         public override void WriteEnumValue<T>(T value)
         {
-            this.Stats.EnumWrites++;
+            //this.Stats.EnumWrites++;
 
             this.Writer.Write(value.ToInt32(System.Globalization.CultureInfo.InvariantCulture));
         }
