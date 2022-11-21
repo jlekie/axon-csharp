@@ -540,6 +540,11 @@ namespace Axon
             throw new NotImplementedException("Indeterminate values not supported at this time");
         }
 
+        public override void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void WriteRequestStart(RequestHeader header)
         {
             this.WriteStringValue(header.ActionName);

@@ -75,7 +75,7 @@ namespace Axon
         public abstract Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
     }
 
-    public interface IProtocolReader
+    public interface IProtocolReader : IDisposable
     {
         IProtocol Protocol { get; }
 
@@ -128,6 +128,8 @@ namespace Axon
 
     public abstract class AProtocolReader : IProtocolReader
     {
+        private bool disposedValue;
+
         public AProtocol Protocol { get; }
         IProtocol IProtocolReader.Protocol => this.Protocol;
 
@@ -256,9 +258,38 @@ namespace Axon
 
         //    return new IndefiniteValueHeader(valueType);
         //}
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~AProtocolReader()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 
-    public interface IProtocolWriter
+    public interface IProtocolWriter : IDisposable
     {
         IProtocol Protocol { get; }
 
@@ -274,6 +305,8 @@ namespace Axon
         void WriteDoubleValue(double value);
         void WriteEnumValue<T>(T value) where T : struct, IConvertible;
         void WriteIndeterminateValue(object value);
+
+        void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler);
 
         void WriteRequestStart(RequestHeader header);
         void WriteRequestStart(string actionName, int argumentCount);
@@ -355,6 +388,8 @@ namespace Axon
 
     public abstract class AProtocolWriter : IProtocolWriter
     {
+        private bool disposedValue;
+
         public AProtocol Protocol { get; }
         IProtocol IProtocolWriter.Protocol => this.Protocol;
 
@@ -375,6 +410,8 @@ namespace Axon
         public abstract void WriteDoubleValue(double value);
         public abstract void WriteEnumValue<T>(T value) where T : struct, IConvertible;
         public abstract void WriteIndeterminateValue(object value);
+
+        public abstract void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler);
 
         public abstract void WriteRequestStart(RequestHeader header);
         public abstract void WriteRequestEnd();
@@ -623,5 +660,34 @@ namespace Axon
         //{
         //    throw new NotImplementedException();
         //}
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~AProtocolReader()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

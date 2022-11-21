@@ -10,6 +10,7 @@ using System.Buffers;
 using System.Runtime.InteropServices;
 
 using K4os.Compression.LZ4;
+using System.Security.Cryptography;
 
 namespace Axon
 {
@@ -753,13 +754,13 @@ namespace Axon
 
         public override T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
         {
-            var reader = new EntanglementProtocolBufferReader(this, data);
+            using var reader = new EntanglementProtocolBufferReader(this, data);
 
             return handler(reader);
         }
         public override Memory<byte> Write(Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
+            using var writer = new EntanglementProtocolBufferWriter(this);
             handler(writer);
 
             //writer.Stats.WriteToConsole();
@@ -769,28 +770,28 @@ namespace Axon
 
         public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
+            using var writer = new EntanglementProtocolBufferWriter(this);
             handler(writer);
 
             await transport.Send(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
         }
         public override async Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
+            using var writer = new EntanglementProtocolBufferWriter(this);
             handler(writer);
 
             await transport.Send(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
         }
         public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
+            using var writer = new EntanglementProtocolBufferWriter(this);
             handler(writer);
 
             await transport.Send(messageId, new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
         }
         public override async Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
+            using var writer = new EntanglementProtocolBufferWriter(this);
             handler(writer);
 
             await transport.Send(messageId, new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
@@ -803,7 +804,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             handler(reader, receivedData.Metadata);
         }
         public override async Task ReadData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
@@ -813,7 +814,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, ITransportMetadata, TResult> handler)
@@ -823,7 +824,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             return handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
@@ -833,7 +834,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             return handler(reader, receivedData.Metadata);
         }
         public override async Task ReadData(ITransport transport, string messageId, Action<IProtocolReader, ITransportMetadata> handler)
@@ -843,7 +844,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             handler(reader, receivedData.Metadata);
         }
         public override async Task ReadData(ITransport transport, string messageId, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler)
@@ -853,7 +854,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, Func<IProtocolReader, ITransportMetadata, TResult> handler)
@@ -863,7 +864,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             return handler(reader, receivedData.Metadata);
         }
         public override async Task<TResult> ReadData<TResult>(ITransport transport, string messageId, CancellationToken cancellationToken, Func<IProtocolReader, ITransportMetadata, TResult> handler)
@@ -873,7 +874,7 @@ namespace Axon
             if (receivedData.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
             return handler(reader, receivedData.Metadata);
         }
 
@@ -884,7 +885,7 @@ namespace Axon
             if (receivedData.Message.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.Message.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
             handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
         public override async Task ReadTaggedData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, string, ITransportMetadata> handler)
@@ -894,7 +895,7 @@ namespace Axon
             if (receivedData.Message.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.Message.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
             handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
         public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
@@ -904,7 +905,7 @@ namespace Axon
             if (receivedData.Message.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.Message.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
             return handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
         public override async Task<TResult> ReadTaggedData<TResult>(ITransport transport, CancellationToken cancellationToken, Func<IProtocolReader, string, ITransportMetadata, TResult> handler)
@@ -914,16 +915,19 @@ namespace Axon
             if (receivedData.Message.ProtocolIdentifier != this.Identifier)
                 throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.Message.ProtocolIdentifier}]");
 
-            var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
+            using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Message.Payload));
             return handler(reader, receivedData.Id, receivedData.Message.Metadata);
         }
 
         public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
-            handler(writer);
+            Func<Task<TransportMessage>> receiveHandler;
+            using (var writer = new EntanglementProtocolBufferWriter(this))
+            {
+                handler(writer);
 
-            var receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
+            }
 
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
@@ -931,16 +935,19 @@ namespace Axon
                 if (receivedData.ProtocolIdentifier != this.Identifier)
                     throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-                var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+                using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
                 readHandler(reader, receivedData.Metadata);
             });
         }
         public override async Task<Func<Action<IProtocolReader, ITransportMetadata>, Task>> WriteAndReadData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
-            handler(writer);
+            Func<Task<TransportMessage>> receiveHandler;
+            using (var writer = new EntanglementProtocolBufferWriter(this))
+            {
+                handler(writer);
 
-            var receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+            }
 
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
@@ -948,16 +955,19 @@ namespace Axon
                 if (receivedData.ProtocolIdentifier != this.Identifier)
                     throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-                var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+                using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
                 readHandler(reader, receivedData.Metadata);
             });
         }
         public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
-            handler(writer);
+            Func<Task<TransportMessage>> receiveHandler;
+            using (var writer = new EntanglementProtocolBufferWriter(this))
+            {
+                handler(writer);
 
-            var receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
+            }
 
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
@@ -965,16 +975,19 @@ namespace Axon
                 if (receivedData.ProtocolIdentifier != this.Identifier)
                     throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-                var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+                using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
                 return readHandler(reader, receivedData.Metadata);
             });
         }
         public override async Task<Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler)
         {
-            var writer = new EntanglementProtocolBufferWriter(this);
-            handler(writer);
+            Func<Task<TransportMessage>> receiveHandler;
+            using (var writer = new EntanglementProtocolBufferWriter(this))
+            {
+                handler(writer);
 
-            var receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(this.CompressData(writer.Span), this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)), cancellationToken);
+            }
 
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
@@ -982,7 +995,7 @@ namespace Axon
                 if (receivedData.ProtocolIdentifier != this.Identifier)
                     throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
-                var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
+                using var reader = new EntanglementProtocolBufferReader(this, this.DecompressData(receivedData.Payload));
                 return readHandler(reader, receivedData.Metadata);
             });
         }
@@ -1110,457 +1123,630 @@ namespace Axon
         }
     }
 
-//    public class EntanglementProtocolWriter : AProtocolWriter
-//    {
-//        public Stream EncoderStream { get; private set; }
-
-//        private byte[] PrimitivesBuffer;
-
-//        public WriterStats Stats { get; } = new WriterStats();
-
-//        public EntanglementProtocolWriter(AProtocol protocol, Stream encoderStream)
-//            : base(protocol)
-//        {
-//            this.EncoderStream = encoderStream;
-
-//#if NETSTANDARD
-//            this.PrimitivesBuffer = System.Buffers.ArrayPool<byte>.Shared.Rent(2048);
-//#else
-//            this.PrimitivesBuffer = new byte[2048];
-//#endif
-//        }
-
-//        public override void WriteData(Span<byte> data)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public override void WriteStringValue(string value)
-//        {
-//            this.Stats.StringWrites++;
-
-//            var length = Encoding.UTF8.GetBytes(value, 0, value.Length, this.PrimitivesBuffer, 4);
-//            //for (var i = 0; i < value.Length; i++)
-//            //    this.PrimitivesBuffer[i] = (byte)(value[i] & 0x7f);
-//            //var buffer = System.Text.Encoding.UTF8.GetBytes(value);
-
-//            this.PrimitivesBuffer[0] = (byte)length;
-//            this.PrimitivesBuffer[1] = (byte)(length >> 8);
-//            this.PrimitivesBuffer[2] = (byte)(length >> 16);
-//            this.PrimitivesBuffer[3] = (byte)(length >> 24);
-
-//            //this.EncoderStream.Write(BitConverter.GetBytes(length), 0, 4);
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 4, length);
-//        }
-//        public override void WriteBooleanValue(bool value)
-//        {
-//            this.Stats.BooleanWrites++;
-
-//            this.PrimitivesBuffer[0] = value ? (byte)1 : (byte)0;
-
-//            this.EncoderStream.Write(BitConverter.GetBytes(value), 0, 1);
-//        }
-//        public override void WriteByteValue(byte value)
-//        {
-//            this.Stats.ByteWrites++;
-
-//            this.PrimitivesBuffer[0] = value;
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 1);
-//        }
-//        public override void WriteShortValue(short value)
-//        {
-//            this.Stats.ShortWrites++;
-
-//            this.PrimitivesBuffer[0] = (byte)value;
-//            this.PrimitivesBuffer[1] = (byte)(value >> 8);
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 2);
-//        }
-//        public override void WriteIntegerValue(int value)
-//        {
-//            this.Stats.IntegerWrites++;
-
-//            this.PrimitivesBuffer[0] = (byte)value;
-//            this.PrimitivesBuffer[1] = (byte)(value >> 8);
-//            this.PrimitivesBuffer[2] = (byte)(value >> 16);
-//            this.PrimitivesBuffer[3] = (byte)(value >> 24);
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
-//        }
-//        public override void WriteLongValue(long value)
-//        {
-//            this.Stats.LongWrites++;
-
-//            this.PrimitivesBuffer[0] = (byte)value;
-//            this.PrimitivesBuffer[1] = (byte)(value >> 8);
-//            this.PrimitivesBuffer[2] = (byte)(value >> 16);
-//            this.PrimitivesBuffer[3] = (byte)(value >> 24);
-//            this.PrimitivesBuffer[4] = (byte)(value >> 32);
-//            this.PrimitivesBuffer[5] = (byte)(value >> 40);
-//            this.PrimitivesBuffer[6] = (byte)(value >> 48);
-//            this.PrimitivesBuffer[7] = (byte)(value >> 56);
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 8);
-//        }
-//        public override unsafe void WriteFloatValue(float value)
-//        {
-//            this.Stats.FloatWrites++;
-
-//            uint tmpValue = *(uint*)&value;
-//            this.PrimitivesBuffer[0] = (byte)tmpValue;
-//            this.PrimitivesBuffer[1] = (byte)(tmpValue >> 8);
-//            this.PrimitivesBuffer[2] = (byte)(tmpValue >> 16);
-//            this.PrimitivesBuffer[3] = (byte)(tmpValue >> 24);
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
-//        }
-//        public override unsafe void WriteDoubleValue(double value)
-//        {
-//            this.Stats.DoubleWrites++;
-
-//            ulong tmpValue = *(ulong*)&value;
-//            this.PrimitivesBuffer[0] = (byte)tmpValue;
-//            this.PrimitivesBuffer[1] = (byte)(tmpValue >> 8);
-//            this.PrimitivesBuffer[2] = (byte)(tmpValue >> 16);
-//            this.PrimitivesBuffer[3] = (byte)(tmpValue >> 24);
-//            this.PrimitivesBuffer[4] = (byte)(tmpValue >> 32);
-//            this.PrimitivesBuffer[5] = (byte)(tmpValue >> 40);
-//            this.PrimitivesBuffer[6] = (byte)(tmpValue >> 48);
-//            this.PrimitivesBuffer[7] = (byte)(tmpValue >> 56);
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 8);
-//        }
-//        public override void WriteEnumValue<T>(T value)
-//        {
-//            this.Stats.EnumWrites++;
-
-//            var enumValue = value.ToInt32(System.Globalization.CultureInfo.InvariantCulture);
-
-//            this.PrimitivesBuffer[0] = (byte)enumValue;
-//            this.PrimitivesBuffer[1] = (byte)(enumValue >> 8);
-//            this.PrimitivesBuffer[2] = (byte)(enumValue >> 16);
-//            this.PrimitivesBuffer[3] = (byte)(enumValue >> 24);
-
-//            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
-//        }
-//        public override void WriteIndeterminateValue(object value)
-//        {
-//            throw new NotImplementedException("Indeterminate values not supported at this time");
-//        }
-
-//        public override void WriteRequestStart(RequestHeader header)
-//        {
-//            this.WriteStringValue(header.ActionName);
-//            this.WriteIntegerValue(header.ArgumentCount);
-//        }
-//        public override void WriteRequestEnd()
-//        {
-//        }
-
-//        public override void WriteRequestArgumentStart(RequestArgumentHeader header)
-//        {
-//            this.WriteStringValue(header.ArgumentName);
-//            this.WriteStringValue(header.Type);
-//        }
-//        public override void WriteRequestArgumentEnd()
-//        {
-//        }
-
-//        public override void WriteResponseStart(ResponseHeader header)
-//        {
-//            this.WriteBooleanValue(header.Success);
-//            this.WriteStringValue(header.Type);
-//            this.WriteIntegerValue(header.ArgumentCount);
-//        }
-//        public override void WriteResponseEnd()
-//        {
-//        }
-
-//        public override void WriteResponseArgumentStart(ResponseArgumentHeader header)
-//        {
-//            this.WriteStringValue(header.ArgumentName);
-//            this.WriteStringValue(header.Type);
-//        }
-//        public override void WriteResponseArgumentEnd()
-//        {
-//        }
-
-//        public override void WriteModelStart(ModelHeader header)
-//        {
-//            this.WriteStringValue(header.ModelName);
-//            this.WriteIntegerValue(header.PropertyCount);
-//        }
-//        public override void WriteModelEnd()
-//        {
-//        }
-
-//        public override void WriteModelPropertyStart(ModelPropertyHeader header)
-//        {
-//            this.WriteStringValue(header.PropertyName);
-//            this.WriteStringValue(header.Type);
-//        }
-//        public override void WriteModelPropertyEnd()
-//        {
-//        }
-
-//        public override void WriteArrayStart(ArrayHeader header)
-//        {
-//            this.WriteIntegerValue(header.ItemCount);
-//        }
-//        public override void WriteArrayEnd()
-//        {
-//        }
-
-//        public override void WriteArrayItemStart(ArrayItemHeader header)
-//        {
-//            this.WriteStringValue(header.Type);
-//        }
-//        public override void WriteArrayItemEnd()
-//        {
-//        }
-
-//        public override void WriteDictionaryStart(DictionaryHeader header)
-//        {
-//            this.WriteIntegerValue(header.RecordCount);
-//        }
-//        public override void WriteDictionaryEnd()
-//        {
-//        }
-
-//        public override void WriteDictionaryItemStart(DictionaryItemHeader header)
-//        {
-//            this.WriteStringValue(header.KeyType);
-//            this.WriteStringValue(header.ValueType);
-//        }
-//        public override void WriteDictionaryItemEnd()
-//        {
-//        }
-
-//        public override void WriteIndefiniteValueStart(IndefiniteValueHeader header)
-//        {
-//            this.WriteStringValue(header.ValueType);
-//        }
-//        public override void WriteIndefiniteValueEnd()
-//        {
-//        }
-//    }
-
-//    public class EntanglementProtocolReader : AProtocolReader
-//    {
-//        public Stream DecoderStream { get; private set; }
-
-//        private byte[] PrimitivesBuffer;
-
-//        public EntanglementProtocolReader(AProtocol protocol, Stream decoderStream)
-//            : base(protocol)
-//        {
-//            this.DecoderStream = decoderStream;
-
-//#if NETSTANDARD
-//            this.PrimitivesBuffer = System.Buffers.ArrayPool<byte>.Shared.Rent(2048);
-//#else
-//            this.PrimitivesBuffer = new byte[2048];
-//#endif
-//        }
-
-//        public override Span<byte> ReadData()
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public override string ReadStringValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
-//            var length = BitConverter.ToInt32(this.PrimitivesBuffer, 0);
-
-//            if (length > 0)
-//            {
-//                //var contentBuffer = new byte[length];
-//                //Console.WriteLine(length);
-//                this.DecoderStream.Read(this.PrimitivesBuffer, 0, length);
-
-//                return System.Text.Encoding.UTF8.GetString(this.PrimitivesBuffer, 0, length);
-//            }
-//            else
-//            {
-//                return string.Empty;
-//            }
-//        }
-//        public override bool ReadBooleanValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 1);
-
-//            return BitConverter.ToBoolean(this.PrimitivesBuffer, 0);
-//        }
-//        public override byte ReadByteValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 1);
-
-//            return this.PrimitivesBuffer[0];
-//        }
-//        public override short ReadShortValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 2);
-
-//            return BitConverter.ToInt16(this.PrimitivesBuffer, 0);
-//        }
-//        public override int ReadIntegerValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
-
-//            return BitConverter.ToInt32(this.PrimitivesBuffer, 0);
-//        }
-//        public override long ReadLongValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 8);
-
-//            return BitConverter.ToInt64(this.PrimitivesBuffer, 0);
-//        }
-//        public override float ReadFloatValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
-
-//            return BitConverter.ToSingle(this.PrimitivesBuffer, 0);
-//        }
-//        public override double ReadDoubleValue()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 8);
-
-//            return BitConverter.ToDouble(this.PrimitivesBuffer, 0);
-//        }
-//        public override T ReadEnumValue<T>()
-//        {
-//            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
-
-//            var enumValue = BitConverter.ToInt32(this.PrimitivesBuffer, 0);
-
-//            return (T)Enum.ToObject(typeof(T), enumValue);
-//        }
-//        public override object ReadIndeterminateValue()
-//        {
-//            throw new NotImplementedException("Indeterminate values not supported at this time");
-//        }
-
-//        public override RequestHeader ReadRequestStart()
-//        {
-//            var actionName = this.ReadStringValue();
-//            var argumentCount = this.ReadIntegerValue();
-
-//            return new RequestHeader(actionName, argumentCount);
-//        }
-//        public override void ReadRequestEnd()
-//        {
-//        }
-
-//        public override RequestArgumentHeader ReadRequestArgumentStart()
-//        {
-//            var argumentName = this.ReadStringValue();
-//            var type = this.ReadStringValue();
-
-//            return new RequestArgumentHeader(argumentName, type);
-//        }
-//        public override void ReadRequestArgumentEnd()
-//        {
-//        }
-
-//        public override ResponseHeader ReadResponseStart()
-//        {
-//            var success = this.ReadBooleanValue();
-//            var type = this.ReadStringValue();
-//            var argumentCount = this.ReadIntegerValue();
-
-//            return new ResponseHeader(success, type, argumentCount);
-//        }
-//        public override void ReadResponseEnd()
-//        {
-//        }
-
-//        public override ResponseArgumentHeader ReadResponseArgumentStart()
-//        {
-//            var argumentName = this.ReadStringValue();
-//            var type = this.ReadStringValue();
-
-//            return new ResponseArgumentHeader(argumentName, type);
-//        }
-//        public override void ReadResponseArgumentEnd()
-//        {
-//        }
-
-//        public override ModelHeader ReadModelStart()
-//        {
-//            var modelName = this.ReadStringValue();
-//            var propertyCount = this.ReadIntegerValue();
-
-//            return new ModelHeader(modelName, propertyCount);
-//        }
-//        public override void ReadModelEnd()
-//        {
-//        }
-
-//        public override ModelPropertyHeader ReadModelPropertyStart()
-//        {
-//            var propertyName = this.ReadStringValue();
-//            var type = this.ReadStringValue();
-
-//            return new ModelPropertyHeader(propertyName, type);
-//        }
-//        public override void ReadModelPropertyEnd()
-//        {
-//        }
-
-//        public override ArrayHeader ReadArrayStart()
-//        {
-//            var itemCount = this.ReadIntegerValue();
-
-//            return new ArrayHeader(itemCount);
-//        }
-//        public override void ReadArrayEnd()
-//        {
-//        }
-
-//        public override ArrayItemHeader ReadArrayItemStart()
-//        {
-//            var type = this.ReadStringValue();
-
-//            return new ArrayItemHeader(type);
-//        }
-//        public override void ReadArrayItemEnd()
-//        {
-//        }
-
-//        public override DictionaryHeader ReadDictionaryStart()
-//        {
-//            var recordCount = this.ReadIntegerValue();
-
-//            return new DictionaryHeader(recordCount);
-//        }
-//        public override void ReadDictionaryEnd()
-//        {
-//        }
-
-//        public override DictionaryItemHeader ReadDictionaryItemStart()
-//        {
-//            var keyType = this.ReadStringValue();
-//            var valueType = this.ReadStringValue();
-
-//            return new DictionaryItemHeader(keyType, valueType);
-//        }
-//        public override void ReadDictionaryItemEnd()
-//        {
-//        }
-
-//        public override IndefiniteValueHeader ReadIndefiniteValueStart()
-//        {
-//            var valueType = this.ReadStringValue();
-
-//            return new IndefiniteValueHeader(valueType);
-//        }
-//        public override void ReadIndefiniteValueEnd()
-//        {
-//        }
-//    }
+    //    public class EntanglementProtocolWriter : AProtocolWriter
+    //    {
+    //        public Stream EncoderStream { get; private set; }
+
+    //        private byte[] PrimitivesBuffer;
+
+    //        public WriterStats Stats { get; } = new WriterStats();
+
+    //        public EntanglementProtocolWriter(AProtocol protocol, Stream encoderStream)
+    //            : base(protocol)
+    //        {
+    //            this.EncoderStream = encoderStream;
+
+    //#if NETSTANDARD
+    //            this.PrimitivesBuffer = System.Buffers.ArrayPool<byte>.Shared.Rent(2048);
+    //#else
+    //            this.PrimitivesBuffer = new byte[2048];
+    //#endif
+    //        }
+
+    //        public override void WriteData(Span<byte> data)
+    //        {
+    //            throw new NotImplementedException();
+    //        }
+
+    //        public override void WriteStringValue(string value)
+    //        {
+    //            this.Stats.StringWrites++;
+
+    //            var length = Encoding.UTF8.GetBytes(value, 0, value.Length, this.PrimitivesBuffer, 4);
+    //            //for (var i = 0; i < value.Length; i++)
+    //            //    this.PrimitivesBuffer[i] = (byte)(value[i] & 0x7f);
+    //            //var buffer = System.Text.Encoding.UTF8.GetBytes(value);
+
+    //            this.PrimitivesBuffer[0] = (byte)length;
+    //            this.PrimitivesBuffer[1] = (byte)(length >> 8);
+    //            this.PrimitivesBuffer[2] = (byte)(length >> 16);
+    //            this.PrimitivesBuffer[3] = (byte)(length >> 24);
+
+    //            //this.EncoderStream.Write(BitConverter.GetBytes(length), 0, 4);
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 4, length);
+    //        }
+    //        public override void WriteBooleanValue(bool value)
+    //        {
+    //            this.Stats.BooleanWrites++;
+
+    //            this.PrimitivesBuffer[0] = value ? (byte)1 : (byte)0;
+
+    //            this.EncoderStream.Write(BitConverter.GetBytes(value), 0, 1);
+    //        }
+    //        public override void WriteByteValue(byte value)
+    //        {
+    //            this.Stats.ByteWrites++;
+
+    //            this.PrimitivesBuffer[0] = value;
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 1);
+    //        }
+    //        public override void WriteShortValue(short value)
+    //        {
+    //            this.Stats.ShortWrites++;
+
+    //            this.PrimitivesBuffer[0] = (byte)value;
+    //            this.PrimitivesBuffer[1] = (byte)(value >> 8);
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 2);
+    //        }
+    //        public override void WriteIntegerValue(int value)
+    //        {
+    //            this.Stats.IntegerWrites++;
+
+    //            this.PrimitivesBuffer[0] = (byte)value;
+    //            this.PrimitivesBuffer[1] = (byte)(value >> 8);
+    //            this.PrimitivesBuffer[2] = (byte)(value >> 16);
+    //            this.PrimitivesBuffer[3] = (byte)(value >> 24);
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
+    //        }
+    //        public override void WriteLongValue(long value)
+    //        {
+    //            this.Stats.LongWrites++;
+
+    //            this.PrimitivesBuffer[0] = (byte)value;
+    //            this.PrimitivesBuffer[1] = (byte)(value >> 8);
+    //            this.PrimitivesBuffer[2] = (byte)(value >> 16);
+    //            this.PrimitivesBuffer[3] = (byte)(value >> 24);
+    //            this.PrimitivesBuffer[4] = (byte)(value >> 32);
+    //            this.PrimitivesBuffer[5] = (byte)(value >> 40);
+    //            this.PrimitivesBuffer[6] = (byte)(value >> 48);
+    //            this.PrimitivesBuffer[7] = (byte)(value >> 56);
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 8);
+    //        }
+    //        public override unsafe void WriteFloatValue(float value)
+    //        {
+    //            this.Stats.FloatWrites++;
+
+    //            uint tmpValue = *(uint*)&value;
+    //            this.PrimitivesBuffer[0] = (byte)tmpValue;
+    //            this.PrimitivesBuffer[1] = (byte)(tmpValue >> 8);
+    //            this.PrimitivesBuffer[2] = (byte)(tmpValue >> 16);
+    //            this.PrimitivesBuffer[3] = (byte)(tmpValue >> 24);
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
+    //        }
+    //        public override unsafe void WriteDoubleValue(double value)
+    //        {
+    //            this.Stats.DoubleWrites++;
+
+    //            ulong tmpValue = *(ulong*)&value;
+    //            this.PrimitivesBuffer[0] = (byte)tmpValue;
+    //            this.PrimitivesBuffer[1] = (byte)(tmpValue >> 8);
+    //            this.PrimitivesBuffer[2] = (byte)(tmpValue >> 16);
+    //            this.PrimitivesBuffer[3] = (byte)(tmpValue >> 24);
+    //            this.PrimitivesBuffer[4] = (byte)(tmpValue >> 32);
+    //            this.PrimitivesBuffer[5] = (byte)(tmpValue >> 40);
+    //            this.PrimitivesBuffer[6] = (byte)(tmpValue >> 48);
+    //            this.PrimitivesBuffer[7] = (byte)(tmpValue >> 56);
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 8);
+    //        }
+    //        public override void WriteEnumValue<T>(T value)
+    //        {
+    //            this.Stats.EnumWrites++;
+
+    //            var enumValue = value.ToInt32(System.Globalization.CultureInfo.InvariantCulture);
+
+    //            this.PrimitivesBuffer[0] = (byte)enumValue;
+    //            this.PrimitivesBuffer[1] = (byte)(enumValue >> 8);
+    //            this.PrimitivesBuffer[2] = (byte)(enumValue >> 16);
+    //            this.PrimitivesBuffer[3] = (byte)(enumValue >> 24);
+
+    //            this.EncoderStream.Write(this.PrimitivesBuffer, 0, 4);
+    //        }
+    //        public override void WriteIndeterminateValue(object value)
+    //        {
+    //            throw new NotImplementedException("Indeterminate values not supported at this time");
+    //        }
+
+    //        public override void WriteRequestStart(RequestHeader header)
+    //        {
+    //            this.WriteStringValue(header.ActionName);
+    //            this.WriteIntegerValue(header.ArgumentCount);
+    //        }
+    //        public override void WriteRequestEnd()
+    //        {
+    //        }
+
+    //        public override void WriteRequestArgumentStart(RequestArgumentHeader header)
+    //        {
+    //            this.WriteStringValue(header.ArgumentName);
+    //            this.WriteStringValue(header.Type);
+    //        }
+    //        public override void WriteRequestArgumentEnd()
+    //        {
+    //        }
+
+    //        public override void WriteResponseStart(ResponseHeader header)
+    //        {
+    //            this.WriteBooleanValue(header.Success);
+    //            this.WriteStringValue(header.Type);
+    //            this.WriteIntegerValue(header.ArgumentCount);
+    //        }
+    //        public override void WriteResponseEnd()
+    //        {
+    //        }
+
+    //        public override void WriteResponseArgumentStart(ResponseArgumentHeader header)
+    //        {
+    //            this.WriteStringValue(header.ArgumentName);
+    //            this.WriteStringValue(header.Type);
+    //        }
+    //        public override void WriteResponseArgumentEnd()
+    //        {
+    //        }
+
+    //        public override void WriteModelStart(ModelHeader header)
+    //        {
+    //            this.WriteStringValue(header.ModelName);
+    //            this.WriteIntegerValue(header.PropertyCount);
+    //        }
+    //        public override void WriteModelEnd()
+    //        {
+    //        }
+
+    //        public override void WriteModelPropertyStart(ModelPropertyHeader header)
+    //        {
+    //            this.WriteStringValue(header.PropertyName);
+    //            this.WriteStringValue(header.Type);
+    //        }
+    //        public override void WriteModelPropertyEnd()
+    //        {
+    //        }
+
+    //        public override void WriteArrayStart(ArrayHeader header)
+    //        {
+    //            this.WriteIntegerValue(header.ItemCount);
+    //        }
+    //        public override void WriteArrayEnd()
+    //        {
+    //        }
+
+    //        public override void WriteArrayItemStart(ArrayItemHeader header)
+    //        {
+    //            this.WriteStringValue(header.Type);
+    //        }
+    //        public override void WriteArrayItemEnd()
+    //        {
+    //        }
+
+    //        public override void WriteDictionaryStart(DictionaryHeader header)
+    //        {
+    //            this.WriteIntegerValue(header.RecordCount);
+    //        }
+    //        public override void WriteDictionaryEnd()
+    //        {
+    //        }
+
+    //        public override void WriteDictionaryItemStart(DictionaryItemHeader header)
+    //        {
+    //            this.WriteStringValue(header.KeyType);
+    //            this.WriteStringValue(header.ValueType);
+    //        }
+    //        public override void WriteDictionaryItemEnd()
+    //        {
+    //        }
+
+    //        public override void WriteIndefiniteValueStart(IndefiniteValueHeader header)
+    //        {
+    //            this.WriteStringValue(header.ValueType);
+    //        }
+    //        public override void WriteIndefiniteValueEnd()
+    //        {
+    //        }
+    //    }
+
+    //    public class EntanglementProtocolReader : AProtocolReader
+    //    {
+    //        public Stream DecoderStream { get; private set; }
+
+    //        private byte[] PrimitivesBuffer;
+
+    //        public EntanglementProtocolReader(AProtocol protocol, Stream decoderStream)
+    //            : base(protocol)
+    //        {
+    //            this.DecoderStream = decoderStream;
+
+    //#if NETSTANDARD
+    //            this.PrimitivesBuffer = System.Buffers.ArrayPool<byte>.Shared.Rent(2048);
+    //#else
+    //            this.PrimitivesBuffer = new byte[2048];
+    //#endif
+    //        }
+
+    //        public override Span<byte> ReadData()
+    //        {
+    //            throw new NotImplementedException();
+    //        }
+
+    //        public override string ReadStringValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
+    //            var length = BitConverter.ToInt32(this.PrimitivesBuffer, 0);
+
+    //            if (length > 0)
+    //            {
+    //                //var contentBuffer = new byte[length];
+    //                //Console.WriteLine(length);
+    //                this.DecoderStream.Read(this.PrimitivesBuffer, 0, length);
+
+    //                return System.Text.Encoding.UTF8.GetString(this.PrimitivesBuffer, 0, length);
+    //            }
+    //            else
+    //            {
+    //                return string.Empty;
+    //            }
+    //        }
+    //        public override bool ReadBooleanValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 1);
+
+    //            return BitConverter.ToBoolean(this.PrimitivesBuffer, 0);
+    //        }
+    //        public override byte ReadByteValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 1);
+
+    //            return this.PrimitivesBuffer[0];
+    //        }
+    //        public override short ReadShortValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 2);
+
+    //            return BitConverter.ToInt16(this.PrimitivesBuffer, 0);
+    //        }
+    //        public override int ReadIntegerValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
+
+    //            return BitConverter.ToInt32(this.PrimitivesBuffer, 0);
+    //        }
+    //        public override long ReadLongValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 8);
+
+    //            return BitConverter.ToInt64(this.PrimitivesBuffer, 0);
+    //        }
+    //        public override float ReadFloatValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
+
+    //            return BitConverter.ToSingle(this.PrimitivesBuffer, 0);
+    //        }
+    //        public override double ReadDoubleValue()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 8);
+
+    //            return BitConverter.ToDouble(this.PrimitivesBuffer, 0);
+    //        }
+    //        public override T ReadEnumValue<T>()
+    //        {
+    //            this.DecoderStream.Read(this.PrimitivesBuffer, 0, 4);
+
+    //            var enumValue = BitConverter.ToInt32(this.PrimitivesBuffer, 0);
+
+    //            return (T)Enum.ToObject(typeof(T), enumValue);
+    //        }
+    //        public override object ReadIndeterminateValue()
+    //        {
+    //            throw new NotImplementedException("Indeterminate values not supported at this time");
+    //        }
+
+    //        public override RequestHeader ReadRequestStart()
+    //        {
+    //            var actionName = this.ReadStringValue();
+    //            var argumentCount = this.ReadIntegerValue();
+
+    //            return new RequestHeader(actionName, argumentCount);
+    //        }
+    //        public override void ReadRequestEnd()
+    //        {
+    //        }
+
+    //        public override RequestArgumentHeader ReadRequestArgumentStart()
+    //        {
+    //            var argumentName = this.ReadStringValue();
+    //            var type = this.ReadStringValue();
+
+    //            return new RequestArgumentHeader(argumentName, type);
+    //        }
+    //        public override void ReadRequestArgumentEnd()
+    //        {
+    //        }
+
+    //        public override ResponseHeader ReadResponseStart()
+    //        {
+    //            var success = this.ReadBooleanValue();
+    //            var type = this.ReadStringValue();
+    //            var argumentCount = this.ReadIntegerValue();
+
+    //            return new ResponseHeader(success, type, argumentCount);
+    //        }
+    //        public override void ReadResponseEnd()
+    //        {
+    //        }
+
+    //        public override ResponseArgumentHeader ReadResponseArgumentStart()
+    //        {
+    //            var argumentName = this.ReadStringValue();
+    //            var type = this.ReadStringValue();
+
+    //            return new ResponseArgumentHeader(argumentName, type);
+    //        }
+    //        public override void ReadResponseArgumentEnd()
+    //        {
+    //        }
+
+    //        public override ModelHeader ReadModelStart()
+    //        {
+    //            var modelName = this.ReadStringValue();
+    //            var propertyCount = this.ReadIntegerValue();
+
+    //            return new ModelHeader(modelName, propertyCount);
+    //        }
+    //        public override void ReadModelEnd()
+    //        {
+    //        }
+
+    //        public override ModelPropertyHeader ReadModelPropertyStart()
+    //        {
+    //            var propertyName = this.ReadStringValue();
+    //            var type = this.ReadStringValue();
+
+    //            return new ModelPropertyHeader(propertyName, type);
+    //        }
+    //        public override void ReadModelPropertyEnd()
+    //        {
+    //        }
+
+    //        public override ArrayHeader ReadArrayStart()
+    //        {
+    //            var itemCount = this.ReadIntegerValue();
+
+    //            return new ArrayHeader(itemCount);
+    //        }
+    //        public override void ReadArrayEnd()
+    //        {
+    //        }
+
+    //        public override ArrayItemHeader ReadArrayItemStart()
+    //        {
+    //            var type = this.ReadStringValue();
+
+    //            return new ArrayItemHeader(type);
+    //        }
+    //        public override void ReadArrayItemEnd()
+    //        {
+    //        }
+
+    //        public override DictionaryHeader ReadDictionaryStart()
+    //        {
+    //            var recordCount = this.ReadIntegerValue();
+
+    //            return new DictionaryHeader(recordCount);
+    //        }
+    //        public override void ReadDictionaryEnd()
+    //        {
+    //        }
+
+    //        public override DictionaryItemHeader ReadDictionaryItemStart()
+    //        {
+    //            var keyType = this.ReadStringValue();
+    //            var valueType = this.ReadStringValue();
+
+    //            return new DictionaryItemHeader(keyType, valueType);
+    //        }
+    //        public override void ReadDictionaryItemEnd()
+    //        {
+    //        }
+
+    //        public override IndefiniteValueHeader ReadIndefiniteValueStart()
+    //        {
+    //            var valueType = this.ReadStringValue();
+
+    //            return new IndefiniteValueHeader(valueType);
+    //        }
+    //        public override void ReadIndefiniteValueEnd()
+    //        {
+    //        }
+    //    }
+
+    public class IncrementalHashWriter : AProtocolWriter
+    {
+        public IncrementalHash Hasher { get; }
+
+        public IncrementalHashWriter(AProtocol protocol)
+            : base(protocol)
+        {
+            this.Hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        }
+        
+        public override void WriteData(Span<byte> data)
+        {
+            this.Hasher.AppendData(data);
+        }
+
+        public override void WriteStringValue(string value)
+        {
+            var length = Encoding.UTF8.GetByteCount(value);
+            var stringBuffer = ArrayPool<byte>.Shared.Rent(length);
+            Encoding.UTF8.GetBytes(value, 0, value.Length, stringBuffer, 0);
+            this.Hasher.AppendData(stringBuffer, 0, length);
+            ArrayPool<byte>.Shared.Return(stringBuffer);
+        }
+        public override void WriteBooleanValue(bool value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value));
+        }
+        public override void WriteByteValue(byte value)
+        {
+            this.Hasher.AppendData(new byte[] { value });
+        }
+        public override void WriteShortValue(short value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value));
+        }
+        public override void WriteIntegerValue(int value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value));
+        }
+        public override void WriteLongValue(long value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value));
+        }
+        public override void WriteFloatValue(float value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value));
+        }
+        public override void WriteDoubleValue(double value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value));
+        }
+        public override void WriteEnumValue<T>(T value)
+        {
+            this.Hasher.AppendData(BitConverter.GetBytes(value.ToInt32(System.Globalization.CultureInfo.InvariantCulture)));
+        }
+        public override void WriteIndeterminateValue(object value)
+        {
+            throw new NotImplementedException("Indeterminate values not supported at this time");
+        }
+
+        public override void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler)
+        {
+            var data = this.Protocol.Write(writer => writerHandler(writer));
+            this.Hasher.AppendData(data.Span);
+        }
+
+        public override void WriteRequestStart(RequestHeader header)
+        {
+            this.WriteStringValue(header.ActionName);
+            this.WriteIntegerValue(header.ArgumentCount);
+        }
+        public override void WriteRequestEnd()
+        {
+        }
+
+        public override void WriteRequestArgumentStart(RequestArgumentHeader header)
+        {
+            this.WriteStringValue(header.ArgumentName);
+            this.WriteStringValue(header.Type);
+        }
+        public override void WriteRequestArgumentEnd()
+        {
+        }
+
+        public override void WriteResponseStart(ResponseHeader header)
+        {
+            this.WriteBooleanValue(header.Success);
+            this.WriteStringValue(header.Type);
+            this.WriteIntegerValue(header.ArgumentCount);
+        }
+        public override void WriteResponseEnd()
+        {
+        }
+
+        public override void WriteResponseArgumentStart(ResponseArgumentHeader header)
+        {
+            this.WriteStringValue(header.ArgumentName);
+            this.WriteStringValue(header.Type);
+        }
+        public override void WriteResponseArgumentEnd()
+        {
+        }
+
+        public override void WriteModelStart(ModelHeader header)
+        {
+            this.WriteStringValue(header.ModelName);
+            this.WriteIntegerValue(header.PropertyCount);
+        }
+        public override void WriteModelEnd()
+        {
+        }
+
+        public override void WriteModelPropertyStart(ModelPropertyHeader header)
+        {
+            this.WriteStringValue(header.PropertyName);
+            this.WriteStringValue(header.Type);
+        }
+        public override void WriteModelPropertyEnd()
+        {
+        }
+
+        public override void WriteArrayStart(ArrayHeader header)
+        {
+            this.WriteIntegerValue(header.ItemCount);
+        }
+        public override void WriteArrayEnd()
+        {
+        }
+
+        public override void WriteArrayItemStart(ArrayItemHeader header)
+        {
+            this.WriteStringValue(header.Type);
+        }
+        public override void WriteArrayItemEnd()
+        {
+        }
+
+        public override void WriteDictionaryStart(DictionaryHeader header)
+        {
+            this.WriteIntegerValue(header.RecordCount);
+        }
+        public override void WriteDictionaryEnd()
+        {
+        }
+
+        public override void WriteDictionaryItemStart(DictionaryItemHeader header)
+        {
+            this.WriteStringValue(header.KeyType);
+            this.WriteStringValue(header.ValueType);
+        }
+        public override void WriteDictionaryItemEnd()
+        {
+        }
+
+        public override void WriteIndefiniteValueStart(IndefiniteValueHeader header)
+        {
+            this.WriteStringValue(header.ValueType);
+        }
+        public override void WriteIndefiniteValueEnd()
+        {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this.Hasher.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+    }
 
     public class EntanglementProtocolBufferWriter : AProtocolWriter
     {
@@ -1700,6 +1886,32 @@ namespace Axon
             throw new NotImplementedException("Indeterminate values not supported at this time");
         }
 
+        public override void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler)
+        {
+            string hash;
+            using (var hashWriter = new IncrementalHashWriter(this.Protocol))
+            {
+                hashHandler(hashWriter);
+
+                var encodedHash = hashWriter.Hasher.GetHashAndReset();
+                hash = Convert.ToHexString(encodedHash);
+            }
+
+            if (this.Index.TryGetValue(hash, out var pos))
+            {
+                this.Writer.Write(pos);
+            }
+            else
+            {
+                this.Index.Add(hash, this.IndexWriter.Position);
+                this.Writer.Write(this.IndexWriter.Position);
+
+                var data = this.Protocol.Write(writer => writerHandler(writer));
+                this.IndexWriter.Write(data.Length);
+                this.IndexWriter.Write(data.Span);
+            }
+        }
+
         public override void WriteRequestStart(RequestHeader header)
         {
             this.WriteStringValue(header.ActionName);
@@ -1794,6 +2006,17 @@ namespace Axon
         }
         public override void WriteIndefiniteValueEnd()
         {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this.IndexWriter.Dispose();
+                this.Writer.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
     }
 
