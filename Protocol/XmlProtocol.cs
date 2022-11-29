@@ -18,6 +18,15 @@ namespace Axon
         {
         }
 
+        public override void Read(Memory<byte> data, Action<IProtocolReader> handler)
+        {
+            using (var buffer = new MemoryStream(data.ToArray()))
+            {
+                var reader = new XmlProtocolReader(this, buffer);
+
+                handler(reader);
+            }
+        }
         public override T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
         {
             using (var buffer = new MemoryStream(data.ToArray()))
@@ -349,7 +358,7 @@ namespace Axon
             throw new NotImplementedException("Indeterminate values not supported at this time");
         }
 
-        public override void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler)
+        public override void WriteHashedBlock(Action<IProtocolWriter> writerHandler)
         {
             throw new NotImplementedException();
         }
@@ -529,6 +538,15 @@ namespace Axon
         public override object ReadIndeterminateValue()
         {
             throw new NotImplementedException("Indeterminate values not supported at this time");
+        }
+
+        public override void ReadHashedBlock(Action<IProtocolReader> readHandler)
+        {
+            throw new NotImplementedException();
+        }
+        public override T ReadHashedBlock<T>(Func<IProtocolReader, T> readHandler)
+        {
+            throw new NotImplementedException();
         }
 
         public override RequestHeader ReadRequestStart()

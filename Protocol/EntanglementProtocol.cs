@@ -752,6 +752,12 @@ namespace Axon
             this.Compress = options.Compress;
         }
 
+        public override void Read(Memory<byte> data, Action<IProtocolReader> handler)
+        {
+            using var reader = new EntanglementProtocolBufferReader(this, data);
+
+            handler(reader);
+        }
         public override T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
         {
             using var reader = new EntanglementProtocolBufferReader(this, data);
@@ -1039,7 +1045,7 @@ namespace Axon
 
 
 
-
+            //Console.WriteLine($"Raw Data Length: {data.Length}");
             using (var ms = new MemoryStream())
             {
                 using (var gzs = new System.IO.Compression.ZLibStream(ms, System.IO.Compression.CompressionLevel.Fastest))
@@ -1635,7 +1641,7 @@ namespace Axon
             throw new NotImplementedException("Indeterminate values not supported at this time");
         }
 
-        public override void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler)
+        public override void WriteHashedBlock(Action<IProtocolWriter> writerHandler)
         {
             var data = this.Protocol.Write(writer => writerHandler(writer));
             this.Hasher.AppendData(data.Span);
@@ -1748,12 +1754,50 @@ namespace Axon
         }
     }
 
+    internal class EntanglementProtocolBufferWriterIndex : IDisposable
+    {
+        private bool disposedValue;
+
+        public readonly Dictionary<string, int> Dictionary = new Dictionary<string, int>();
+        public readonly Entanglement.BinaryWriter Writer = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    this.Writer.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~EntanglementProtocolBufferWriterIndex()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+    }
+
     public class EntanglementProtocolBufferWriter : AProtocolWriter
     {
         //public WriterStats Stats { get; } = new WriterStats();
 
-        private Dictionary<string, int> Index = new Dictionary<string, int>();
-        private Entanglement.BinaryWriter IndexWriter = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
+        private Dictionary<string, int> IndexDictionary;
+        private Entanglement.BinaryWriter IndexWriter;
+        private bool Forked;
 
         private Entanglement.BinaryWriter Writer = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
 
@@ -1765,6 +1809,20 @@ namespace Axon
         public EntanglementProtocolBufferWriter(AProtocol protocol)
             : base(protocol)
         {
+            this.IndexDictionary = new Dictionary<string, int>();
+            this.IndexWriter = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
+        }
+        internal EntanglementProtocolBufferWriter(AProtocol protocol, Dictionary<string, int> indexDictionary, Entanglement.BinaryWriter indexWriter)
+            : base(protocol)
+        {
+            this.IndexDictionary = indexDictionary;
+            this.IndexWriter = indexWriter;
+            this.Forked = true;
+        }
+
+        public EntanglementProtocolBufferWriter Fork()
+        {
+            return new EntanglementProtocolBufferWriter(this.Protocol, this.IndexDictionary, this.IndexWriter);
         }
 
         public Span<byte> ResolveData()
@@ -1794,13 +1852,13 @@ namespace Axon
         {
             //this.Stats.StringWrites++;
 
-            if (this.Index.TryGetValue(value, out var pos))
+            if (this.IndexDictionary.TryGetValue(value, out var pos))
             {
                 this.Writer.Write(pos);
             }
             else
             {
-                this.Index.Add(value, this.IndexWriter.Position);
+                this.IndexDictionary.Add(value, this.IndexWriter.Position);
                 this.Writer.Write(this.IndexWriter.Position);
 
                 var length = Encoding.UTF8.GetByteCount(value);
@@ -1886,30 +1944,62 @@ namespace Axon
             throw new NotImplementedException("Indeterminate values not supported at this time");
         }
 
-        public override void WriteHashedBlock(Action<IncrementalHashWriter> hashHandler, Action<IProtocolWriter> writerHandler)
+        public override void WriteHashedBlock(Action<IProtocolWriter> writerHandler)
         {
-            string hash;
-            using (var hashWriter = new IncrementalHashWriter(this.Protocol))
-            {
-                hashHandler(hashWriter);
+            //string hash;
+            //using (var hashWriter = new IncrementalHashWriter(this.Protocol))
+            //{
+            //    hashHandler(hashWriter);
 
-                var encodedHash = hashWriter.Hasher.GetHashAndReset();
-                hash = Convert.ToHexString(encodedHash);
+            //    var encodedHash = hashWriter.Hasher.GetHashAndReset();
+            //    hash = Convert.ToHexString(encodedHash);
+            //}
+
+            Span<byte> data;
+            using (var forkedWriter = this.Fork())
+            {
+                writerHandler(forkedWriter);
+                //data = forkedWriter.Writer.Span;
+                data = forkedWriter.Writer.Span.ToArray();
+
+                //data = ArrayPool<byte>.Shared.Rent(forkedWriter.Writer.Span.Length);
+                ////data = new byte[forkedWriter.Writer.Span.Length];
+                //forkedWriter.Writer.Span.CopyTo(data);
             }
 
-            if (this.Index.TryGetValue(hash, out var pos))
+            //var data = this.Protocol.Write(writer => writerHandler(writer));
+
+            string hash;
+            using (var sha256 = SHA256.Create())
+            {
+                var hashBytes = ArrayPool<byte>.Shared.Rent(32);
+                try
+                {
+                    if (!sha256.TryComputeHash(data, hashBytes, out var length))
+                        throw new Exception("Could not compute hash of block");
+
+                    hash = Convert.ToHexString(hashBytes);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(hashBytes);
+                }
+            }
+
+            if (this.IndexDictionary.TryGetValue(hash, out var pos))
             {
                 this.Writer.Write(pos);
             }
             else
             {
-                this.Index.Add(hash, this.IndexWriter.Position);
+                this.IndexDictionary.Add(hash, this.IndexWriter.Position);
                 this.Writer.Write(this.IndexWriter.Position);
 
-                var data = this.Protocol.Write(writer => writerHandler(writer));
-                this.IndexWriter.Write(data.Length);
-                this.IndexWriter.Write(data.Span);
+                //this.IndexWriter.Write(data.Length);
+                this.IndexWriter.Write(data);
             }
+
+            //ArrayPool<byte>.Shared.Return(data);
         }
 
         public override void WriteRequestStart(RequestHeader header)
@@ -2012,7 +2102,9 @@ namespace Axon
         {
             if (disposing)
             {
-                this.IndexWriter.Dispose();
+                if (!this.Forked)
+                    this.IndexWriter.Dispose();
+
                 this.Writer.Dispose();
             }
 
@@ -2026,20 +2118,20 @@ namespace Axon
         private int Position { get; set; }
 
         private Dictionary<int, string> Index = new Dictionary<int, string>();
-        private (int, int) IndexBounds { get; }
-        private Entanglement.BinaryReader IndexReader
-        {
-            get
-            {
-                return new Entanglement.BinaryReader(this.Buffer.Span[this.IndexBounds.Item1..this.IndexBounds.Item2]);
-            }
-        }
+        //private (int, int) IndexBounds { get; }
+        //private Entanglement.BinaryReader IndexReader
+        //{
+        //    get
+        //    {
+        //        return new Entanglement.BinaryReader(this.Buffer.Span[4..]);
+        //    }
+        //}
 
         private Entanglement.BinaryReader Reader
         {
             get
             {
-                return new Entanglement.BinaryReader(this.Buffer.Span[this.Position..]);
+                return new Entanglement.BinaryReader(this.Buffer.Span[4..]);
             }
         }
 
@@ -2047,19 +2139,23 @@ namespace Axon
             : base(protocol)
         {
             this.Buffer = buffer;
-            //this.Position = 0;
 
             var reader = new Entanglement.BinaryReader(this.Buffer.Span);
-            this.IndexBounds = (4, 3 + reader.Read<int>());
-            this.Position = this.IndexBounds.Item2 + 1;
+            this.Position = reader.Read<int>();
+        }
+        private EntanglementProtocolBufferReader(AProtocol protocol, Memory<byte> buffer, int position)
+            : base(protocol)
+        {
+            this.Buffer = buffer;
+            this.Position = position;
         }
 
         public override Span<byte> ReadData()
         {
-            var length = this.Reader.Read<int>();
+            var length = this.Reader.Read<int>(this.Position);
             this.Position += 4;
 
-            var data = this.Buffer.Span.Slice(this.Position, length);
+            var data = this.Buffer.Span.Slice(4 + this.Position, length);
             this.Position += length;
 
             return data;
@@ -2067,7 +2163,7 @@ namespace Axon
 
         public override string ReadStringValue()
         {
-            var indexPos = this.Reader.Read<int>();
+            var indexPos = this.Reader.Read<int>(this.Position);
             this.Position += 4;
 
             if (this.Index.TryGetValue(indexPos, out var value))
@@ -2076,11 +2172,11 @@ namespace Axon
             }
             else
             {
-                var length = this.IndexReader.Read<int>(indexPos);
+                var length = this.Reader.Read<int>(indexPos);
 
                 string content;
                 if (length > 0)
-                    content = String.Create(length, new { Buffer = this.Buffer, Position = this.IndexBounds.Item1 + indexPos + 4 }, (chars, state) => Encoding.UTF8.GetString(state.Buffer.Span.Slice(state.Position, length)).AsSpan().CopyTo(chars));
+                    content = String.Create(length, new { Buffer = this.Buffer, Position = 4 + indexPos + 4 }, (chars, state) => Encoding.UTF8.GetString(state.Buffer.Span.Slice(state.Position, length)).AsSpan().CopyTo(chars));
                 else
                     content = string.Empty;
 
@@ -2125,7 +2221,7 @@ namespace Axon
         }
         public override bool ReadBooleanValue()
         {
-            var value = this.Reader.Read<bool>();
+            var value = this.Reader.Read<bool>(this.Position);
             this.Position += 1;
             return value;
 
@@ -2136,7 +2232,7 @@ namespace Axon
         }
         public override byte ReadByteValue()
         {
-            var value = this.Reader.Read<byte>();
+            var value = this.Reader.Read<byte>(this.Position);
             this.Position += 1;
             return value;
 
@@ -2147,7 +2243,7 @@ namespace Axon
         }
         public override short ReadShortValue()
         {
-            var value = this.Reader.Read<short>();
+            var value = this.Reader.Read<short>(this.Position);
             this.Position += 2;
             return value;
 
@@ -2158,7 +2254,7 @@ namespace Axon
         }
         public override int ReadIntegerValue()
         {
-            var value = this.Reader.Read<int>();
+            var value = this.Reader.Read<int>(this.Position);
             this.Position += 4;
             return value;
 
@@ -2169,7 +2265,7 @@ namespace Axon
         }
         public override long ReadLongValue()
         {
-            var value = this.Reader.Read<long>();
+            var value = this.Reader.Read<long>(this.Position);
             this.Position += 8;
             return value;
 
@@ -2180,7 +2276,7 @@ namespace Axon
         }
         public override float ReadFloatValue()
         {
-            var value = this.Reader.Read<float>();
+            var value = this.Reader.Read<float>(this.Position);
             this.Position += 4;
             return value;
 
@@ -2191,7 +2287,7 @@ namespace Axon
         }
         public override double ReadDoubleValue()
         {
-            var value = this.Reader.Read<double>();
+            var value = this.Reader.Read<double>(this.Position);
             this.Position += 8;
             return value;
 
@@ -2202,7 +2298,7 @@ namespace Axon
         }
         public override T ReadEnumValue<T>()
         {
-            var value = (T)Enum.ToObject(typeof(T), this.Reader.Read<int>());
+            var value = (T)Enum.ToObject(typeof(T), this.Reader.Read<int>(this.Position));
             this.Position += 4;
             return value;
 
@@ -2214,6 +2310,29 @@ namespace Axon
         public override object ReadIndeterminateValue()
         {
             throw new NotImplementedException("Indeterminate values not supported at this time");
+        }
+
+        public override void ReadHashedBlock(Action<IProtocolReader> readHandler)
+        {
+            var indexPos = this.Reader.Read<int>(this.Position);
+            this.Position += 4;
+
+            //var length = this.IndexReader.Read<int>(indexPos);
+            //var data = this.Buffer.Slice(4 + indexPos + 4, length);
+
+            var forkedReader = new EntanglementProtocolBufferReader(this.Protocol, this.Buffer, indexPos);
+            readHandler(forkedReader);
+        }
+        public override T ReadHashedBlock<T>(Func<IProtocolReader, T> readHandler)
+        {
+            var indexPos = this.Reader.Read<int>(this.Position);
+            this.Position += 4;
+
+            //var length = this.IndexReader.Read<int>(indexPos);
+            //var data = this.Buffer.Slice(4 + indexPos + 4, length);
+
+            var forkedReader = new EntanglementProtocolBufferReader(this.Protocol, this.Buffer, indexPos);
+            return readHandler(forkedReader);
         }
 
         public override RequestHeader ReadRequestStart()
@@ -2444,7 +2563,7 @@ namespace Axon.Entanglement
     /// <summary>
     /// A <see langword="struct"/> that provides a fast implementation of a binary writer, leveraging <see cref="ArrayPool{T}"/> for memory pooling
     /// </summary>
-    internal struct BinaryWriter
+    internal class BinaryWriter
     {
         /// <summary>
         /// The default size to use to create new <see cref="BinaryWriter"/> instances
