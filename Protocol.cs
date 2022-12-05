@@ -315,6 +315,8 @@ namespace Axon
         void WriteIndeterminateValue(object value);
 
         void WriteHashedBlock(Action<IProtocolWriter> writerHandler);
+        void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler);
+        void WriteHashedBlock(Func<System.Security.Cryptography.IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler);
 
         void WriteRequestStart(RequestHeader header);
         void WriteRequestStart(string actionName, int argumentCount);
@@ -420,6 +422,8 @@ namespace Axon
         public abstract void WriteIndeterminateValue(object value);
 
         public abstract void WriteHashedBlock(Action<IProtocolWriter> writerHandler);
+        public abstract void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler);
+        public abstract void WriteHashedBlock(Func<System.Security.Cryptography.IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler);
 
         public abstract void WriteRequestStart(RequestHeader header);
         public abstract void WriteRequestEnd();

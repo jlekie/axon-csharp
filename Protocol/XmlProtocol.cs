@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Security.Cryptography;
 
 namespace Axon
 {
@@ -359,6 +360,14 @@ namespace Axon
         }
 
         public override void WriteHashedBlock(Action<IProtocolWriter> writerHandler)
+        {
+            throw new NotImplementedException();
+        }
+        public override void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler)
+        {
+            throw new NotImplementedException();
+        }
+        public override void WriteHashedBlock(Func<IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler)
         {
             throw new NotImplementedException();
         }

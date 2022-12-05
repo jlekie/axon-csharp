@@ -11,6 +11,8 @@ using System.Runtime.InteropServices;
 
 using K4os.Compression.LZ4;
 using System.Security.Cryptography;
+using Blake3;
+using K4os.Compression.LZ4.Engine;
 
 namespace Axon
 {
@@ -1646,6 +1648,16 @@ namespace Axon
             var data = this.Protocol.Write(writer => writerHandler(writer));
             this.Hasher.AppendData(data.Span);
         }
+        public override void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler)
+        {
+            var data = this.Protocol.Write(writer => writerHandler(writer));
+            this.Hasher.AppendData(data.Span);
+        }
+        public override void WriteHashedBlock(Func<IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler)
+        {
+            var data = this.Protocol.Write(writer => writerHandler(writer));
+            this.Hasher.AppendData(data.Span);
+        }
 
         public override void WriteRequestStart(RequestHeader header)
         {
@@ -1797,6 +1809,8 @@ namespace Axon
 
         private Dictionary<string, int> IndexDictionary;
         private Entanglement.BinaryWriter IndexWriter;
+        private IncrementalHash Hasher;
+        private byte[] HasherBuffer;
         private bool Forked;
 
         private Entanglement.BinaryWriter Writer = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
@@ -1811,18 +1825,22 @@ namespace Axon
         {
             this.IndexDictionary = new Dictionary<string, int>();
             this.IndexWriter = new Entanglement.BinaryWriter(Entanglement.BinaryWriter.DefaultSize);
+            this.Hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            this.HasherBuffer = ArrayPool<byte>.Shared.Rent(32);
         }
-        internal EntanglementProtocolBufferWriter(AProtocol protocol, Dictionary<string, int> indexDictionary, Entanglement.BinaryWriter indexWriter)
+        internal EntanglementProtocolBufferWriter(AProtocol protocol, Dictionary<string, int> indexDictionary, Entanglement.BinaryWriter indexWriter, IncrementalHash hasher, byte[] hasherBuffer)
             : base(protocol)
         {
             this.IndexDictionary = indexDictionary;
             this.IndexWriter = indexWriter;
+            this.Hasher = hasher;
+            this.HasherBuffer = hasherBuffer;
             this.Forked = true;
         }
 
         public EntanglementProtocolBufferWriter Fork()
         {
-            return new EntanglementProtocolBufferWriter(this.Protocol, this.IndexDictionary, this.IndexWriter);
+            return new EntanglementProtocolBufferWriter(this.Protocol, this.IndexDictionary, this.IndexWriter, this.Hasher, this.HasherBuffer);
         }
 
         public Span<byte> ResolveData()
@@ -1946,6 +1964,67 @@ namespace Axon
 
         public override void WriteHashedBlock(Action<IProtocolWriter> writerHandler)
         {
+            ////string hash;
+            ////using (var hashWriter = new IncrementalHashWriter(this.Protocol))
+            ////{
+            ////    hashHandler(hashWriter);
+
+            ////    var encodedHash = hashWriter.Hasher.GetHashAndReset();
+            ////    hash = Convert.ToHexString(encodedHash);
+            ////}
+
+            //Span<byte> data;
+            //using (var forkedWriter = this.Fork())
+            //{
+            //    writerHandler(forkedWriter);
+            //    //data = forkedWriter.Writer.Span;
+            //    data = forkedWriter.Writer.Span.ToArray();
+
+            //    //data = ArrayPool<byte>.Shared.Rent(forkedWriter.Writer.Span.Length);
+            //    ////data = new byte[forkedWriter.Writer.Span.Length];
+            //    //forkedWriter.Writer.Span.CopyTo(data);
+            //}
+
+            ////var data = this.Protocol.Write(writer => writerHandler(writer));
+
+            //string hash;
+            //using (var sha256 = SHA256.Create())
+            //{
+            //    var hashBytes = ArrayPool<byte>.Shared.Rent(32);
+            //    try
+            //    {
+            //        if (!sha256.TryComputeHash(data, hashBytes, out var length))
+            //            throw new Exception("Could not compute hash of block");
+
+            //        hash = Convert.ToHexString(hashBytes);
+            //    }
+            //    finally
+            //    {
+            //        ArrayPool<byte>.Shared.Return(hashBytes);
+            //    }
+            //}
+            ////var hash = Blake3.Hasher.Hash(data).ToString();
+            ////var hash = Guid.NewGuid().ToString();
+
+            //if (this.IndexDictionary.TryGetValue(hash, out var pos))
+            //{
+            //    this.Writer.Write(pos);
+            //}
+            //else
+            //{
+            //    this.IndexDictionary.Add(hash, this.IndexWriter.Position);
+            //    this.Writer.Write(this.IndexWriter.Position);
+
+            //    //this.IndexWriter.Write(data.Length);
+            //    this.IndexWriter.Write(data);
+            //}
+
+            ////ArrayPool<byte>.Shared.Return(data);
+
+            throw new NotImplementedException();
+        }
+        public override void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler)
+        {
             //string hash;
             //using (var hashWriter = new IncrementalHashWriter(this.Protocol))
             //{
@@ -1955,36 +2034,38 @@ namespace Axon
             //    hash = Convert.ToHexString(encodedHash);
             //}
 
-            Span<byte> data;
-            using (var forkedWriter = this.Fork())
-            {
-                writerHandler(forkedWriter);
-                //data = forkedWriter.Writer.Span;
-                data = forkedWriter.Writer.Span.ToArray();
+            //Span<byte> data;
+            //using (var forkedWriter = this.Fork())
+            //{
+            //    writerHandler(forkedWriter);
+            //    //data = forkedWriter.Writer.Span;
+            //    data = forkedWriter.Writer.Span.ToArray();
 
-                //data = ArrayPool<byte>.Shared.Rent(forkedWriter.Writer.Span.Length);
-                ////data = new byte[forkedWriter.Writer.Span.Length];
-                //forkedWriter.Writer.Span.CopyTo(data);
-            }
+            //    //data = ArrayPool<byte>.Shared.Rent(forkedWriter.Writer.Span.Length);
+            //    ////data = new byte[forkedWriter.Writer.Span.Length];
+            //    //forkedWriter.Writer.Span.CopyTo(data);
+            //}
 
             //var data = this.Protocol.Write(writer => writerHandler(writer));
 
-            string hash;
-            using (var sha256 = SHA256.Create())
-            {
-                var hashBytes = ArrayPool<byte>.Shared.Rent(32);
-                try
-                {
-                    if (!sha256.TryComputeHash(data, hashBytes, out var length))
-                        throw new Exception("Could not compute hash of block");
+            //string hash;
+            //using (var sha256 = SHA256.Create())
+            //{
+            //    var hashBytes = ArrayPool<byte>.Shared.Rent(32);
+            //    try
+            //    {
+            //        if (!sha256.TryComputeHash(data, hashBytes, out var length))
+            //            throw new Exception("Could not compute hash of block");
 
-                    hash = Convert.ToHexString(hashBytes);
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(hashBytes);
-                }
-            }
+            //        hash = Convert.ToHexString(hashBytes);
+            //    }
+            //    finally
+            //    {
+            //        ArrayPool<byte>.Shared.Return(hashBytes);
+            //    }
+            //}
+            //var hash = Blake3.Hasher.Hash(data).ToString();
+            //var hash = Guid.NewGuid().ToString();
 
             if (this.IndexDictionary.TryGetValue(hash, out var pos))
             {
@@ -1992,14 +2073,26 @@ namespace Axon
             }
             else
             {
+                Span<byte> data;
+                using (var forkedWriter = this.Fork())
+                {
+                    writerHandler(forkedWriter);
+                    //data = forkedWriter.Writer.Span;
+                    data = forkedWriter.Writer.Span;
+                }
+
                 this.IndexDictionary.Add(hash, this.IndexWriter.Position);
                 this.Writer.Write(this.IndexWriter.Position);
 
-                //this.IndexWriter.Write(data.Length);
                 this.IndexWriter.Write(data);
             }
 
             //ArrayPool<byte>.Shared.Return(data);
+        }
+        public override void WriteHashedBlock(Func<IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler)
+        {
+            var hash = hashHandler(this.Hasher, this.HasherBuffer);
+            this.WriteHashedBlock(hash, writerHandler);
         }
 
         public override void WriteRequestStart(RequestHeader header)
@@ -2103,7 +2196,11 @@ namespace Axon
             if (disposing)
             {
                 if (!this.Forked)
+                {
                     this.IndexWriter.Dispose();
+                    this.Hasher.Dispose();
+                    ArrayPool<byte>.Shared.Return(this.HasherBuffer);
+                }
 
                 this.Writer.Dispose();
             }
