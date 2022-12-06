@@ -700,6 +700,8 @@ namespace Axon
             if (signal != 0)
                 throw new Exception("Message received with signal code " + signal.ToString());
 
+            var protocolIdentifier = reader.ReadString();
+
             var frameCount = reader.ReadInt32();
             for (var a = 0; a < frameCount; a++)
             {
@@ -715,7 +717,7 @@ namespace Axon
             var payloadLength = reader.ReadInt32();
             var payload = reader.ReadBytes(payloadLength);
 
-            return new TransportMessage(payload, metadata);
+            return new TransportMessage(payload, protocolIdentifier, metadata);
         }
     }
 }

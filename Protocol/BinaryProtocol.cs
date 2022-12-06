@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
+using System.Security.Cryptography;
 
 namespace Axon
 {
@@ -14,6 +15,9 @@ namespace Axon
 
     public class BinaryProtocol : AProtocol, IBinaryProtocol
     {
+        public static readonly string IDENTIFIER = "binary";
+        public override string Identifier => IDENTIFIER;
+
         private readonly bool compressionEnabled;
         public bool CompressionEnabled
         {
@@ -28,6 +32,19 @@ namespace Axon
             this.compressionEnabled = compressionEnabled;
         }
 
+        public override void Read(Memory<byte> data, Action<IProtocolReader> handler)
+        {
+            throw new NotImplementedException();
+        }
+        public override T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler)
+        {
+            throw new NotImplementedException();
+        }
+        public override Memory<byte> Write(Action<IProtocolWriter> handler)
+        {
+            throw new NotImplementedException();
+        }
+
         public override async Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler)
         {
             using (var buffer = new MemoryStream())
@@ -36,14 +53,14 @@ namespace Axon
                 {
                     using (var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
                     {
-                        var writer = new BinaryProtocolWriter(compressionStream);
+                        var writer = new BinaryProtocolWriter(this, compressionStream);
 
                         handler(writer);
                     }
                 }
                 else
                 {
-                    var writer = new BinaryProtocolWriter(buffer);
+                    var writer = new BinaryProtocolWriter(this, buffer);
 
                     handler(writer);
 
@@ -51,7 +68,7 @@ namespace Axon
                 }
 
                 var data = buffer.ToArray();
-                await transport.Send(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                await transport.Send(new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
         }
 
@@ -59,16 +76,19 @@ namespace Axon
         {
             var receivedData = await transport.Receive();
 
+            if (receivedData.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
             var buffer = new MemoryStream(receivedData.Payload);
             BinaryProtocolReader reader;
             if (this.CompressionEnabled)
             {
                 var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                reader = new BinaryProtocolReader(compressionStream);
+                reader = new BinaryProtocolReader(this, compressionStream);
             }
             else
             {
-                reader = new BinaryProtocolReader(buffer);
+                reader = new BinaryProtocolReader(this, buffer);
             }
 
             handler(reader, receivedData.Metadata);
@@ -77,16 +97,19 @@ namespace Axon
         {
             var receivedData = await transport.Receive();
 
+            if (receivedData.ProtocolIdentifier != this.Identifier)
+                throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
+
             var buffer = new MemoryStream(receivedData.Payload);
             BinaryProtocolReader reader;
             if (this.CompressionEnabled)
             {
                 var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                reader = new BinaryProtocolReader(compressionStream);
+                reader = new BinaryProtocolReader(this, compressionStream);
             }
             else
             {
-                reader = new BinaryProtocolReader(buffer);
+                reader = new BinaryProtocolReader(this, buffer);
             }
 
             var result = handler(reader, receivedData.Metadata);
@@ -103,14 +126,14 @@ namespace Axon
                 {
                     using (var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
                     {
-                        var writer = new BinaryProtocolWriter(compressionStream);
+                        var writer = new BinaryProtocolWriter(this, compressionStream);
 
                         handler(writer);
                     }
                 }
                 else
                 {
-                    var writer = new BinaryProtocolWriter(buffer);
+                    var writer = new BinaryProtocolWriter(this, buffer);
 
                     handler(writer);
 
@@ -118,22 +141,25 @@ namespace Axon
                 }
 
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
             return new Func<Action<IProtocolReader, ITransportMetadata>, Task>(async (readHandler) => {
                 var receivedData = await receiveHandler();
+
+                if (receivedData.ProtocolIdentifier != this.Identifier)
+                    throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
                 var buffer = new MemoryStream(receivedData.Payload);
                 BinaryProtocolReader reader;
                 if (this.CompressionEnabled)
                 {
                     var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                    reader = new BinaryProtocolReader(compressionStream);
+                    reader = new BinaryProtocolReader(this, compressionStream);
                 }
                 else
                 {
-                    reader = new BinaryProtocolReader(buffer);
+                    reader = new BinaryProtocolReader(this, buffer);
                 }
 
                 readHandler(reader, receivedData.Metadata);
@@ -148,14 +174,14 @@ namespace Axon
                 {
                     using (var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Compress))
                     {
-                        var writer = new BinaryProtocolWriter(compressionStream);
+                        var writer = new BinaryProtocolWriter(this, compressionStream);
 
                         handler(writer);
                     }
                 }
                 else
                 {
-                    var writer = new BinaryProtocolWriter(buffer);
+                    var writer = new BinaryProtocolWriter(this, buffer);
 
                     handler(writer);
 
@@ -163,22 +189,25 @@ namespace Axon
                 }
 
                 var data = buffer.ToArray();
-                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, VolatileTransportMetadata.FromMetadata(metadata)));
+                receiveHandler = await transport.SendAndReceive(new TransportMessage(data, this.Identifier, VolatileTransportMetadata.FromMetadata(metadata)));
             }
 
             return new Func<Func<IProtocolReader, ITransportMetadata, TResult>, Task<TResult>>(async (readHandler) => {
                 var receivedData = await receiveHandler();
+
+                if (receivedData.ProtocolIdentifier != this.Identifier)
+                    throw new Exception($"Protocol mismatch [{this.Identifier} / {receivedData.ProtocolIdentifier}]");
 
                 var buffer = new MemoryStream(receivedData.Payload);
                 BinaryProtocolReader reader;
                 if (this.CompressionEnabled)
                 {
                     var compressionStream = new System.IO.Compression.DeflateStream(buffer, System.IO.Compression.CompressionMode.Decompress);
-                    reader = new BinaryProtocolReader(compressionStream);
+                    reader = new BinaryProtocolReader(this, compressionStream);
                 }
                 else
                 {
-                    reader = new BinaryProtocolReader(buffer);
+                    reader = new BinaryProtocolReader(this, buffer);
                 }
 
                 return readHandler(reader, receivedData.Metadata);
@@ -280,7 +309,8 @@ namespace Axon
     {
         public BinaryReader DecoderStream { get; private set; }
 
-        public BinaryProtocolReader(Stream buffer)
+        public BinaryProtocolReader(AProtocol protocol, Stream buffer)
+            : base(protocol)
         {
             this.DecoderStream = new BinaryReader(buffer);
         }
@@ -331,6 +361,15 @@ namespace Axon
         public override object ReadIndeterminateValue()
         {
             throw new NotImplementedException("Indeterminate values not supported at this time");
+        }
+
+        public override void ReadHashedBlock(Action<IProtocolReader> readHandler)
+        {
+            throw new NotImplementedException();
+        }
+        public override T ReadHashedBlock<T>(Func<IProtocolReader, T> readHandler)
+        {
+            throw new NotImplementedException();
         }
 
         public override RequestHeader ReadRequestStart()
@@ -461,7 +500,8 @@ namespace Axon
     {
         public BinaryWriter EncoderStream { get; private set; }
 
-        public BinaryProtocolWriter(Stream buffer)
+        public BinaryProtocolWriter(AProtocol protocol, Stream buffer)
+            : base(protocol)
         {
             this.EncoderStream = new BinaryWriter(buffer);
         }
@@ -512,6 +552,19 @@ namespace Axon
         public override void WriteIndeterminateValue(object value)
         {
             throw new NotImplementedException("Indeterminate values not supported at this time");
+        }
+
+        public override void WriteHashedBlock(Action<IProtocolWriter> writerHandler)
+        {
+            throw new NotImplementedException();
+        }
+        public override void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler)
+        {
+            throw new NotImplementedException();
+        }
+        public override void WriteHashedBlock(Func<IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler)
+        {
+            throw new NotImplementedException();
         }
 
         public override void WriteRequestStart(RequestHeader header)

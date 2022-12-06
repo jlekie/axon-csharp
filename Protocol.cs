@@ -7,6 +7,12 @@ namespace Axon
 {
     public interface IProtocol
     {
+        string Identifier { get; }
+
+        void Read(Memory<byte> data, Action<IProtocolReader> handler);
+        T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler);
+        Memory<byte> Write(Action<IProtocolWriter> handler);
+
         Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
         Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
         Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
@@ -37,6 +43,12 @@ namespace Axon
 
     public abstract class AProtocol : IProtocol
     {
+        public abstract string Identifier { get; }
+
+        public abstract void Read(Memory<byte> data, Action<IProtocolReader> handler);
+        public abstract T Read<T>(Memory<byte> data, Func<IProtocolReader, T> handler);
+        public abstract Memory<byte> Write(Action<IProtocolWriter> handler);
+
         public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, Action<IProtocolWriter> handler);
         public abstract Task WriteData(ITransport transport, ITransportMetadata metadata, CancellationToken cancellationToken, Action<IProtocolWriter> handler);
         public abstract Task WriteData(ITransport transport, string messageId, ITransportMetadata metadata, Action<IProtocolWriter> handler);
@@ -65,8 +77,10 @@ namespace Axon
         public abstract Task<Func<Action<IProtocolWriter>, Task>> ReadAndWriteData(ITransport transport, CancellationToken cancellationToken, Action<IProtocolReader, ITransportMetadata> handler);
     }
 
-    public interface IProtocolReader
+    public interface IProtocolReader : IDisposable
     {
+        IProtocol Protocol { get; }
+
         Span<byte> ReadData();
 
         string ReadStringValue();
@@ -79,6 +93,9 @@ namespace Axon
         double ReadDoubleValue();
         T ReadEnumValue<T>() where T : struct, IConvertible;
         object ReadIndeterminateValue();
+
+        void ReadHashedBlock(Action<IProtocolReader> readHandler);
+        T ReadHashedBlock<T>(Func<IProtocolReader, T> readHandler);
 
         RequestHeader ReadRequestStart();
         void ReadRequestEnd();
@@ -116,6 +133,16 @@ namespace Axon
 
     public abstract class AProtocolReader : IProtocolReader
     {
+        private bool disposedValue;
+
+        public AProtocol Protocol { get; }
+        IProtocol IProtocolReader.Protocol => this.Protocol;
+
+        public AProtocolReader(AProtocol protocol)
+        {
+            this.Protocol = protocol;
+        }
+
         public abstract Span<byte> ReadData();
 
         public abstract string ReadStringValue();
@@ -128,6 +155,9 @@ namespace Axon
         public abstract double ReadDoubleValue();
         public abstract T ReadEnumValue<T>() where T : struct, IConvertible;
         public abstract object ReadIndeterminateValue();
+
+        public abstract void ReadHashedBlock(Action<IProtocolReader> readHandler);
+        public abstract T ReadHashedBlock<T>(Func<IProtocolReader, T> readHandler);
 
         public abstract RequestHeader ReadRequestStart();
         public abstract void ReadRequestEnd();
@@ -236,10 +266,41 @@ namespace Axon
 
         //    return new IndefiniteValueHeader(valueType);
         //}
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~AProtocolReader()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 
-    public interface IProtocolWriter
+    public interface IProtocolWriter : IDisposable
     {
+        IProtocol Protocol { get; }
+
         void WriteData(Span<byte> data);
 
         void WriteStringValue(string value);
@@ -252,6 +313,10 @@ namespace Axon
         void WriteDoubleValue(double value);
         void WriteEnumValue<T>(T value) where T : struct, IConvertible;
         void WriteIndeterminateValue(object value);
+
+        void WriteHashedBlock(Action<IProtocolWriter> writerHandler);
+        void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler);
+        void WriteHashedBlock(Func<System.Security.Cryptography.IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler);
 
         void WriteRequestStart(RequestHeader header);
         void WriteRequestStart(string actionName, int argumentCount);
@@ -333,6 +398,16 @@ namespace Axon
 
     public abstract class AProtocolWriter : IProtocolWriter
     {
+        private bool disposedValue;
+
+        public AProtocol Protocol { get; }
+        IProtocol IProtocolWriter.Protocol => this.Protocol;
+
+        public AProtocolWriter(AProtocol protocol)
+        {
+            this.Protocol = protocol;
+        }
+
         public abstract void WriteData(Span<byte> data);
 
         public abstract void WriteStringValue(string value);
@@ -345,6 +420,10 @@ namespace Axon
         public abstract void WriteDoubleValue(double value);
         public abstract void WriteEnumValue<T>(T value) where T : struct, IConvertible;
         public abstract void WriteIndeterminateValue(object value);
+
+        public abstract void WriteHashedBlock(Action<IProtocolWriter> writerHandler);
+        public abstract void WriteHashedBlock(string hash, Action<IProtocolWriter> writerHandler);
+        public abstract void WriteHashedBlock(Func<System.Security.Cryptography.IncrementalHash, byte[], string> hashHandler, Action<IProtocolWriter> writerHandler);
 
         public abstract void WriteRequestStart(RequestHeader header);
         public abstract void WriteRequestEnd();
@@ -593,5 +672,34 @@ namespace Axon
         //{
         //    throw new NotImplementedException();
         //}
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~AProtocolReader()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }
