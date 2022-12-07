@@ -5,7 +5,7 @@
     <AssemblyOriginatorKeyFile>Axon.Common.snk</AssemblyOriginatorKeyFile> 
     <DelaySign>false</DelaySign> 
     <PackageId>JLekie.Axon.Common</PackageId>
-    <Version>1.0.0-alpha.3</Version> 
+    <Version>1.0.0-alpha.4</Version> 
     <Description>Axon - Common Runtime</Description> 
     <Authors>Joe Lekie</Authors> 
     <Company>Axon</Company> 
