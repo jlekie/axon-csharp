@@ -2078,7 +2078,7 @@ namespace Axon
                 {
                     writerHandler(forkedWriter);
                     //data = forkedWriter.Writer.Span;
-                    data = forkedWriter.Writer.Span;
+                    data = forkedWriter.Writer.Span.ToArray();
                 }
 
                 this.IndexDictionary.Add(hash, this.IndexWriter.Position);
