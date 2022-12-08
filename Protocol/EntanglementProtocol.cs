@@ -2077,14 +2077,12 @@ namespace Axon
                 using (var forkedWriter = this.Fork())
                 {
                     writerHandler(forkedWriter);
-                    //data = forkedWriter.Writer.Span;
-                    data = forkedWriter.Writer.Span.ToArray();
+
+                    this.IndexDictionary.Add(hash, this.IndexWriter.Position);
+                    this.Writer.Write(this.IndexWriter.Position);
+
+                    this.IndexWriter.Write(forkedWriter.Writer.Span);
                 }
-
-                this.IndexDictionary.Add(hash, this.IndexWriter.Position);
-                this.Writer.Write(this.IndexWriter.Position);
-
-                this.IndexWriter.Write(data);
             }
 
             //ArrayPool<byte>.Shared.Return(data);
