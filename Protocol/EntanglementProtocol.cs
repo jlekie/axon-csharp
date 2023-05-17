@@ -2212,7 +2212,7 @@ namespace Axon
         public Memory<byte> Buffer { get; }
         private int Position { get; set; }
 
-        private Dictionary<int, string> Index = new Dictionary<int, string>();
+        private Dictionary<int, string> Index;
         //private (int, int) IndexBounds { get; }
         //private Entanglement.BinaryReader IndexReader
         //{
@@ -2237,12 +2237,15 @@ namespace Axon
 
             var reader = new Entanglement.BinaryReader(this.Buffer.Span);
             this.Position = reader.Read<int>();
+
+            this.Index = new Dictionary<int, string>();
         }
-        private EntanglementProtocolBufferReader(AProtocol protocol, Memory<byte> buffer, int position)
+        private EntanglementProtocolBufferReader(AProtocol protocol, Memory<byte> buffer, int position, Dictionary<int, string> index)
             : base(protocol)
         {
             this.Buffer = buffer;
             this.Position = position;
+            this.Index = index;
         }
 
         public override Span<byte> ReadData()
@@ -2415,7 +2418,7 @@ namespace Axon
             //var length = this.IndexReader.Read<int>(indexPos);
             //var data = this.Buffer.Slice(4 + indexPos + 4, length);
 
-            var forkedReader = new EntanglementProtocolBufferReader(this.Protocol, this.Buffer, indexPos);
+            var forkedReader = new EntanglementProtocolBufferReader(this.Protocol, this.Buffer, indexPos, this.Index);
             readHandler(forkedReader);
         }
         public override T ReadHashedBlock<T>(Func<IProtocolReader, T> readHandler)
@@ -2426,7 +2429,7 @@ namespace Axon
             //var length = this.IndexReader.Read<int>(indexPos);
             //var data = this.Buffer.Slice(4 + indexPos + 4, length);
 
-            var forkedReader = new EntanglementProtocolBufferReader(this.Protocol, this.Buffer, indexPos);
+            var forkedReader = new EntanglementProtocolBufferReader(this.Protocol, this.Buffer, indexPos, this.Index);
             return readHandler(forkedReader);
         }
 
