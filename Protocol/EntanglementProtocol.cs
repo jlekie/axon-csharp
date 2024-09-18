@@ -2274,9 +2274,14 @@ namespace Axon
 
                 string content;
                 if (length > 0)
-                    content = String.Create(length, new { Buffer = this.Buffer, Position = 4 + indexPos + 4 }, (chars, state) => Encoding.UTF8.GetString(state.Buffer.Span.Slice(state.Position, length)).AsSpan().CopyTo(chars));
+                {
+                    var charLength = Encoding.UTF8.GetCharCount(this.Buffer.Span.Slice(4 + indexPos + 4, length));
+                    content = String.Create(charLength, new { Buffer = this.Buffer, Position = 4 + indexPos + 4 }, (chars, state) => Encoding.UTF8.GetString(state.Buffer.Span.Slice(state.Position, length)).AsSpan().CopyTo(chars));
+                }
                 else
+                {
                     content = string.Empty;
+                }
 
                 this.Index.Add(indexPos, content);
 
